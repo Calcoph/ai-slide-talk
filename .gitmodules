@@ -1,0 +1,3 @@
+[submodule "slidechatter"]
+	path = slidechatter
+	url = https://github.com/lukaswolfrum/slidechatter
