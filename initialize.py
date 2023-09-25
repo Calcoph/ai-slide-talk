@@ -14,6 +14,49 @@ import streamlit as st
 
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
+import os
+
+def init_lecture():
+    try:
+        st.session_state["lecture"] = [x.split("_")[-1] for x in os.listdir("data/embeddings/")][0]
+    except:
+        st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
+        st.stop()
+    
+    return None
+
+def streamlit_setup_explainer_bot():
+    setup_explainer_bot(st.session_state["language"])
+
+def streamlit_setup_qa():
+    setup_qa(st.session_state["lecture"], st.session_state["language"])
+
+def get_default_messages():
+    [
+        {
+            "role": "assistant",
+            "content": f"You are chatting with the {st.session_state['lecture']} slides in {st.session_state['language']}. How can I help you?"
+        }
+    ]
+
+# This is a list instead of a dict because order of operations is important
+# Values are lambdas so they are lazily evaluated
+defaults = [
+    ("history", lambda: []),
+    ("explainer", lambda: False),
+    ("language", lambda: "english"),
+    ("lecture", init_lecture),
+    ("messages", get_default_messages),
+    ("qa", streamlit_setup_qa),
+    ("chatbot", streamlit_setup_explainer_bot)
+]
+
+def initialize_session_state():
+    for (key, default_value) in defaults:
+        if key not in st.session_state:
+            value = default_value()
+            if value is not None:
+                st.session_state[key] = value
 
 @st.cache_resource()
 def setup_qa(lecture, language):
