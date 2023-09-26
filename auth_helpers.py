@@ -1,8 +1,8 @@
 import openai
 import streamlit as st
 import pandas as pd
-
-
+import os
+import bcrypt
 
 def check_api_key(key):
     try:
@@ -30,3 +30,23 @@ def create_new_user(userinfo, check_key=True):
     userdb = pd.concat([userdb,pd.DataFrame(userinfo,index=[0])])     
     userdb.to_json("mockup_userdb.json",orient="records",indent=4)
     st.success("You registered succesfully. Login with your credentials.")
+
+def logout_user():
+    os.environ["OPENAI_API_KEY"] = ""
+    st.session_state["authentication_status"] = False
+    st.session_state["username"] = None
+    st.experimental_rerun()
+
+def login_user(username,password):
+    userdb = pd.read_json("mockup_userdb.json")
+    try:
+        query_res = userdb[userdb["username"]==username]["password"].iloc[0]
+    except IndexError:
+        st.warning("Username not correct.")
+        st.stop()
+    if bcrypt.checkpw(password.encode(),query_res.encode()):
+        st.session_state["authentication_status"] = True
+        st.session_state["username"] = username
+        st.experimental_rerun()
+    else:
+        st.error("Password is wrong.")

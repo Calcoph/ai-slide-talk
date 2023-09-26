@@ -23,19 +23,8 @@ if st.session_state["authentication_status"] in [False, None]:
             username = st.text_input("Username")
             password = st.text_input("Password",type="password")  
             login = st.form_submit_button("Login")
-
         if login:
-            try:
-                query_res = userdb[userdb["username"]==username]["password"].iloc[0]
-            except IndexError:
-                st.warning("Username not correct.")
-                st.stop()
-            if bcrypt.checkpw(password.encode(),query_res.encode()):
-                st.session_state["authentication_status"] = True
-                st.session_state["username"] = username
-                st.experimental_rerun()
-            else:
-                st.error("Password is wrong.")
+            login_user(username=username,password=password)
 
     with register_tab:
         with st.form("register", clear_on_submit=True):   
@@ -59,15 +48,11 @@ if st.session_state["authentication_status"] in [False, None]:
 ###                         
 if st.session_state["authentication_status"] is True:
     logout = st.sidebar.button("Logout")
+    if logout:
+        logout_user()
+    #logout = st.sidebar.button("Logout")
     st.subheader(f"Hey {st.session_state['username']} 👋")
     os.environ["OPENAI_API_KEY"] = userdb[userdb["username"]==st.session_state["username"]]["OPENAI_API_KEY"].iloc[0]
 
     st.subheader("REST OF FORNTEND GOES HERE")
-    
-    if logout:
-        os.environ["OPENAI_API_KEY"] = ""
-        st.session_state["authentication_status"] = False
-        st.session_state["username"] = None
-        st.experimental_rerun()
-
     
