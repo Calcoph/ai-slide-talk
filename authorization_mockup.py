@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from auth_helpers import *
 from initialize import *
+from chat_helpers import render_chat_layout
 
 st.title("Chat with Lecture Slides 💬")
 
@@ -27,21 +28,8 @@ if st.session_state["authentication_status"] is True:
     #logout = st.sidebar.button("Logout")
     st.subheader(f"Hey {st.session_state['username']} 👋")
     
-    st.subheader("REST OF FORNTEND GOES HERE")
+    # st.subheader("REST OF FORNTEND GOES HERE")
 
-    # initialize_session_state()
+    render_chat_layout()
 
-    if "messages" not in st.session_state:
-        st.session_state["messages"] =  [{"role": "assistant", "content": 
-                                        f"How can I help you?"}]
-    for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
-
-    if prompt := st.chat_input():
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
-        
-        mockup_msg = "This is a mockup message."
-        st.session_state.messages.append({"role": "assistant", "content": mockup_msg})
-        st.chat_message("assistant").write(mockup_msg)
-
+    
