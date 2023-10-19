@@ -57,7 +57,8 @@ defaults = [
     ("lecture", init_lecture),
     ("messages", get_default_messages),
     ("qa", streamlit_setup_qa),
-    ("chatbot", streamlit_setup_explainer_bot)
+    ("chatbot", streamlit_setup_explainer_bot),
+    ("authentication_status", lambda: False)
 ]
 
 def initialize_session_state():
@@ -118,7 +119,6 @@ def setup_explainer_bot(language):
     )
 
     if llm is None:
-        st.error("Couldn't load correctly. Do you have a valid OpenAI api token?")
         conversation = None
     else:
         conversation = LLMChain(
