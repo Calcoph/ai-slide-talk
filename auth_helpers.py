@@ -47,7 +47,8 @@ def render_login_register():
                         "password": bcrypt.hashpw(password=password.encode(),salt=salt),
                         "OPENAI_API_KEY": encrypt_api_key(apikey)
                         }
-            create_new_user(userinfo=userinfo,check_key=False)    
+            with st.spinner("Registering User"):
+                create_new_user(userinfo=userinfo,check_key=False)    
 
 def check_api_key(key):
     try:

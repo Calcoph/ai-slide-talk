@@ -22,22 +22,31 @@ def init_lecture():
     except:
         st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
         st.stop()
-    
+
     return None
 
 def streamlit_setup_explainer_bot():
-    setup_explainer_bot(st.session_state["language"])
+    return setup_explainer_bot(st.session_state["language"])
 
 def streamlit_setup_qa():
-    setup_qa(st.session_state["lecture"], st.session_state["language"])
+    return setup_qa(st.session_state["lecture"], st.session_state["language"])
 
 def get_default_messages():
-    [
-        {
-            "role": "assistant",
-            "content": f"You are chatting with the {st.session_state['lecture']} slides in {st.session_state['language']}. How can I help you?"
-        }
-    ]
+    try:
+        lecture = st.session_state['lecture']
+        return [
+            {
+                "role": "assistant",
+                "content": f"You are chatting with the {lecture} slides in {st.session_state['language']}. How can I help you?"
+            }
+        ]
+    except KeyError:
+        return [
+            {
+                "role": "assistant",
+                "content": f"Couldn't load correctly. Do you have a valid OpenAI api token?"
+            }
+        ]
 
 # This is a list instead of a dict because order of operations is important
 # Values are lambdas so they are lazily evaluated
@@ -48,7 +57,8 @@ defaults = [
     ("lecture", init_lecture),
     ("messages", get_default_messages),
     ("qa", streamlit_setup_qa),
-    ("chatbot", streamlit_setup_explainer_bot)
+    ("chatbot", streamlit_setup_explainer_bot),
+    ("authentication_status", lambda: False)
 ]
 
 def initialize_session_state():
@@ -78,19 +88,25 @@ def setup_qa(lecture, language):
     qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 
-    
-    qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0), vectorstore.as_retriever()
-                                       ,combine_docs_chain_kwargs={"prompt": qa_prompt}, return_source_documents=True)
-    
-    return qa
+
+    if vectorstore is None:
+        return None
+    else:
+        qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0), vectorstore.as_retriever()
+                                        ,combine_docs_chain_kwargs={"prompt": qa_prompt}, return_source_documents=True)
+
+        return qa
 
 @st.cache_resource()
 def setup_explainer_bot(language):
-    llm = ChatOpenAI()
+    try:
+        llm = ChatOpenAI()
+    except Exception as e:
+        llm = None
     prompt = ChatPromptTemplate(
         messages=[
             SystemMessagePromptTemplate.from_template(
-                "You are a helpful college professor that explains difficult subjects to 10 year olds. "+ 
+                "You are a helpful college professor that explains difficult subjects to 10 year olds. "+
                 f"Your answers should be in {language}" +
                 """This is the previous conversation with the user: \n
 
@@ -100,10 +116,12 @@ def setup_explainer_bot(language):
         ]
     )
 
-    conversation = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        #verbose=True,
-    )
-
+    if llm is None:
+        conversation = None
+    else:
+        conversation = LLMChain(
+            llm=llm,
+            prompt=prompt,
+            #verbose=True,
+        )
     return conversation

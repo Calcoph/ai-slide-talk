@@ -3,15 +3,21 @@ import pandas as pd
 import streamlit as st
 import os 
 
+@st.cache_data
+def load_history():
+    history_path = "data/mockup_history.json"
+    if os.path.isfile(history_path):
+        with open(history_path,"r") as fp:
+            historydb = json.load(fp=fp)
+    else:
+        historydb = []
+        with open(history_path,"w") as fp:
+            json.dump(historydb,fp=fp)
+    return historydb
+    
+
 def load_chat_history(username,lecture,newest_k=10):
-        history_path = "data/mockup_history.json"
-        if os.path.isfile(history_path):
-            with open(history_path,"r") as fp:
-                historydb = json.load(fp=fp)
-        else:
-            with open(history_path,"w") as fp:
-                json.dump([],fp=fp)
-            historydb = []
+        historydb = load_history()
         ##
         ### Error in logic. Parses the latest 10 messages, if none is by the lecture and user
         ##
