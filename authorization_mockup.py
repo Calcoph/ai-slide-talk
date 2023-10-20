@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-from auth_helpers import *
-from initialize import *
+from auth_helpers import render_login_register, logout_user
+# from initialize import *
 from chat_helpers import render_chat_layout
+import os 
 
 st.title("Chat with Lecture Slides 💬")
 
@@ -12,7 +13,11 @@ if "authentication_status" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state["username"] = None
 
-userdb = pd.read_json("data/mockup_userdb.json")
+userdb_path = "data/mockup_userdb.json"
+if os.path.isfile(userdb_path):
+    userdb = pd.read_json("data/mockup_userdb.json")
+else:
+    pd.DataFrame([{"email":None,"username":None,"password":None,"OPENAI_API_KEY":None}]).to_json(userdb_path,orient="records",indent=4)
 ###
 # Login/Register FRONTEND
 ###

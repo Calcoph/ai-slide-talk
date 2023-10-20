@@ -68,9 +68,10 @@ def create_new_user(userinfo, check_key=True):
         st.error("Your OPENAI API-KEY is wrong. Check again.")
         st.stop()
     # ensure username to be unique
-    if userinfo["username"] in list(userdb["username"]):
-        st.error("Username already taken. Choose another one.")
-        st.stop()
+    if len(userdb) != 0:
+        if userinfo["username"] in list(userdb["username"]):
+            st.error("Username already taken. Choose another one.")
+            st.stop()
     #add user to database
     userdb = pd.concat([userdb,pd.DataFrame(userinfo,index=[0])])     
     userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
@@ -123,8 +124,6 @@ def send_email(recipient, generated_pw):
 
         Regards,
         The Slidechatter Team
-
-
         """
         message = 'Subject: {}\n{}'.format(subject, text)
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
@@ -158,3 +157,30 @@ def send_new_password(email):
         print("Error sending new password.")
         return None
     
+def change_password(change_info):
+    userdb = pd.read_json("data/mockup_userdb.json")
+    query_res = userdb[userdb["username"]==st.session_state["username"]]["password"].iloc[0]
+    if change_info["newpw1"] != change_info["newpw2"]:
+        st.warning("New passwords are not equal.")
+        st.stop()
+    if bcrypt.checkpw(change_info["oldpw"].encode(),query_res.encode()):
+        salt = bcrypt.gensalt()
+        userdb.loc[userdb.username == st.session_state["username"], "password"] = bcrypt.hashpw(password=change_info["newpw2"].encode(),salt=salt)
+        userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+        st.success("Password changed succesfully.")
+    else:
+        st.warning("Old Password not correct.")
+    
+
+def change_openai_apikey(change_info):
+    userdb = pd.read_json("data/mockup_userdb.json")
+    query_res = userdb[userdb["username"]==st.session_state["username"]]["password"].iloc[0]
+    if bcrypt.checkpw(change_info["oldpw"].encode(),query_res.encode()):
+        if check_api_key(change_info["newapikey"]):
+            userdb.loc[userdb.username == st.session_state["username"], "OPENAI_API_KEY"] = change_info["newapikey"]
+            userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+            st.success("OPENAI API KEY changed successfully.")
+        else:
+            st.warning("New OPENAI API KEY is wrong.")            
+    else:
+        st.warning("Old Password not correct.")

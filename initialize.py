@@ -64,7 +64,6 @@ def setup_qa(lecture, language):
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(f"data/embeddings/local_faiss_{lecture}",embeddings=embeddings)
     
-
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
     \n----------------\n{context}"""
