@@ -178,9 +178,10 @@ def change_openai_apikey(change_info):
     query_res = userdb[userdb["username"]==st.session_state["username"]]["password"].iloc[0]
     if bcrypt.checkpw(change_info["oldpw"].encode(),query_res.encode()):
         if check_api_key(change_info["newapikey"]):
-            userdb.loc[userdb.username == st.session_state["username"], "OPENAI_API_KEY"] = change_info["newapikey"]
+            userdb.loc[userdb.username == st.session_state["username"], "OPENAI_API_KEY"] = encrypt_api_key(change_info["newapikey"])
             userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
             st.success("OPENAI API KEY changed successfully.")
+            os.environ["OPENAI_API_KEY"] = change_info["newapikey"]
         else:
             st.warning("New OPENAI API KEY is wrong.")            
     else:

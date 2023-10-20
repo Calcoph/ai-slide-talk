@@ -3,28 +3,29 @@ import pandas as pd
 import streamlit as st
 import os 
 
-@st.cache_data
+# @st.cache_data
 def load_history():
     history_path = "data/mockup_history.json"
     if os.path.isfile(history_path):
-        with open(history_path,"r") as fp:
-            historydb = json.load(fp=fp)
+        historydb = pd.read_json("data/mockup_history.json")
     else:
-        historydb = []
-        with open(history_path,"w") as fp:
-            json.dump(historydb,fp=fp)
+        historydb = pd.DataFrame([{"prompt":None,
+                      "message":None,
+                      "username":None,
+                      "lecture":None,
+                      "language":None}])
+        historydb.to_json("data/mockup_history.json",orient="records",indent=4)
     return historydb
     
 
 def load_chat_history(username,lecture,newest_k=10):
         historydb = load_history()
-        ##
-        ### Error in logic. Parses the latest 10 messages, if none is by the lecture and user
-        ##
-        for msg in historydb[:-newest_k]:
-            if msg["username"] == username and msg["lecture"] == lecture:
-                st.session_state.messages.append({"role":"user","content":msg["prompt"]})
-                st.session_state.messages.append({"role":"assistant","content":msg["message"]})
+        st.session_state.messages = []
+        filtered_history = historydb[(historydb["username"]==username) &(historydb["lecture"]==lecture)]
+        st.write(filtered_history.to_dict("records"))
+        for msg in filtered_history.to_dict("records"):
+            st.session_state.messages.append({"role":"user","content":msg["prompt"]})
+            st.session_state.messages.append({"role":"assistant","content":msg["message"]})
 
 def save_history(message_info):
     historydb = pd.read_json("data/mockup_history.json").to_dict("records")
