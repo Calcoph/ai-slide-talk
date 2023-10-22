@@ -1,12 +1,12 @@
 import streamlit as st
 import os
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader,PDFPlumberLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 
 
-def create_faiss_store(pdf_path: str, lecturename: str):
+def create_faiss_store(pdf_path: str, lecturename: str,username):
     with st.empty():
         st.info("Transforming PDF to Documents.")
         loader = PyPDFLoader(pdf_path)
@@ -19,18 +19,21 @@ def create_faiss_store(pdf_path: str, lecturename: str):
         st.info("Creating Embeddings.")
         embeddings = OpenAIEmbeddings()
         vectorstore = FAISS.from_documents(docs, embeddings)
-        vectorstore.save_local(f"data/embeddings/local_faiss_{lecturename}")
+        if not os.path.isdir(f"data/embeddings/{username}"):
+            os.makedirs(f"data/embeddings/{username}")
+        vectorstore.save_local(f"data/embeddings/{st.session_state['username']}/faiss_{lecturename}")
         st.success("Finished.")
     return vectorstore
 
-def save_uploadedfile(uploadedfile):
-    with open(os.path.join("data/pdfs",uploadedfile.name),"wb") as f:
+def save_uploadedfile(uploadedfile,lecturename, username):
+    if not os.path.isdir(f"data/pdfs/{username}"):
+        os.makedirs(f"data/pdfs/{username}")
+    with open(os.path.join(f"data/pdfs/{username}/",f"{lecturename}.pdf"),"wb") as f:
         f.write(uploadedfile.getbuffer())
     return None
 
 with st.form("lectureupload"):
     lecturename = st.text_input("Enter the Lecturename")
-    
     pdf = st.file_uploader("Upload your lecture slides.",type="pdf")
     submit = st.form_submit_button("Upload")
 
@@ -38,6 +41,11 @@ if submit:
     if "_" in lecturename:
         st.warning("The Lecturename must not contain an underscore  ( _ ) .")
         st.stop()
-    save_uploadedfile(pdf)
+    save_uploadedfile(pdf,
+                      lecturename=lecturename,
+                      username=st.session_state["username"])
+
     with st.spinner("Processing.."):
-        create_faiss_store(f"data/pdfs/{pdf.name}",lecturename=lecturename)
+        create_faiss_store(f"data/pdfs/{st.session_state['username']}/{lecturename}.pdf",
+                           lecturename=lecturename,
+                           username=st.session_state["username"])

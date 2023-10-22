@@ -1,6 +1,4 @@
 /env
 .streamlit/
 __pycache__/
-data/mockup_history.json
-data/mockup_userdb.json
-pdfs/
+data/

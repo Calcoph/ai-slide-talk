@@ -5,7 +5,7 @@ from chat_helpers import render_chat_layout
 from initialize import initialize_session_state
 import os
 
-@st.cache_data
+@st.cache_data()
 def load_userdb():
     userdb_path = "data/mockup_userdb.json"
     if os.path.isfile(userdb_path):
@@ -18,11 +18,17 @@ def load_userdb():
 
 st.title("Chat with Lecture Slides 💬")
 
-initialize_session_state()
+init_variables = ["authentication_status", "username"]
+for var in init_variables:
+    if var not in st.session_state:
+        st.session_state[var] = None
+
 
 userdb = load_userdb()
 
 if st.session_state["authentication_status"]:
+    
+    initialize_session_state()
     ###
     # CHAT FRONTEND
     ###

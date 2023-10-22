@@ -1,18 +1,19 @@
 import streamlit as st
 from history_helpers import load_chat_history,save_history
+import os 
 
 def render_chat_layout():
-    if "lecture" not in st.session_state:
-        st.session_state["lecture"] = "API"
-    if "language" not in st.session_state:
-        st.session_state["language"] = "English"
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = []
+    # if "lecture" not in st.session_state:
+    #     st.session_state["lecture"] = "API"
+    # if "language" not in st.session_state:
+    #     st.session_state["language"] = "English"
+    # if "messages" not in st.session_state:
+    #     st.session_state["messages"] = []
 
     with st.sidebar:
         with st.expander("Select a Lecture & Language"):
             with st.form("lecture_change"):
-                st.session_state["lecture"] = st.selectbox("Select the lecture you want to chat with.", options=["API","MdD"])
+                st.session_state["lecture"] = st.selectbox("Select the lecture you want to chat with.", options=st.session_state["lecture_list"])
                 st.session_state["language"] = st.radio("Choose language of Answer", options=["English","Spanish","German"], horizontal=True)
                 lecture_change = st.form_submit_button("Change lecture & language")
         if lecture_change:
@@ -20,6 +21,7 @@ def render_chat_layout():
                             st.session_state["lecture"],
                             newest_k=10)
             
+            ### missing: CHANGE OF MODEL
     load_chat_history(st.session_state["username"],
                             st.session_state["lecture"],
                             newest_k=10)

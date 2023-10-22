@@ -17,13 +17,14 @@ from langchain.memory import ConversationBufferMemory
 import os
 
 def init_lecture():
-    try:
-        st.session_state["lecture"] = [x.split("_")[-1] for x in os.listdir("data/embeddings/")][0]
-    except:
-        st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
-        st.stop()
+    st.session_state["lecture"] = st.session_state["lecture_list"][0]
 
-    return None
+def load_lecturenames():
+        try:
+            st.session_state["lecture_list"] = [x.split("_")[-1] for x in os.listdir(f"data/embeddings/{st.session_state['username']}")]
+        except:
+            st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
+            st.stop()
 
 def streamlit_setup_explainer_bot():
     return setup_explainer_bot(st.session_state["language"])
@@ -54,11 +55,12 @@ defaults = [
     ("history", lambda: []),
     ("explainer", lambda: False),
     ("language", lambda: "english"),
+    ("lecture_list", load_lecturenames),
     ("lecture", init_lecture),
     ("messages", get_default_messages),
     ("qa", streamlit_setup_qa),
     ("chatbot", streamlit_setup_explainer_bot),
-    ("authentication_status", lambda: False)
+    #("authentication_status", lambda: False)
 ]
 
 def initialize_session_state():
@@ -72,7 +74,7 @@ def initialize_session_state():
 def setup_qa(lecture, language):
 
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local(f"data/embeddings/local_faiss_{lecture}",embeddings=embeddings)
+    vectorstore = FAISS.load_local(f"data/embeddings/{st.session_state['username']}/faiss_{lecture}",embeddings=embeddings)
     
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.

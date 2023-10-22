@@ -87,11 +87,11 @@ def logout_user():
 def login_user(username,password):
     userdb = pd.read_json("data/mockup_userdb.json")
     try:
-        query_res = userdb[userdb["username"]==username]["password"].iloc[0]
+        database_pw = userdb[userdb["username"]==username]["password"].iloc[0]
     except IndexError:
         st.warning("Username not correct.")
         st.stop()
-    if bcrypt.checkpw(password.encode(),query_res.encode()):
+    if bcrypt.checkpw(password.encode(),database_pw.encode()):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
         os.environ["OPENAI_API_KEY"] = decrypt_api_key(userdb[userdb["username"]==st.session_state["username"]]["OPENAI_API_KEY"].iloc[0])
