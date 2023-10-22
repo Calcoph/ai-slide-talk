@@ -4,7 +4,7 @@ from initialize import streamlit_setup_qa
 
 def render_chat_layout():
     ## in sidebar
-    
+
     render_lecture_selector()
 
     ## main page
@@ -29,6 +29,7 @@ def render_chat_layout():
         #     "content":"This is a mockup message."}
         # add AI response to session_state messages
         st.session_state.messages.append(msg)
+        st.session_state.history.append((prompt,response["answer"]))
         #write in chat
         st.chat_message("assistant").write(msg["content"])
 
