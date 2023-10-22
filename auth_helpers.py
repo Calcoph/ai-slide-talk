@@ -80,7 +80,9 @@ def create_new_user(userinfo, check_key=True):
 
 def logout_user():
     os.environ["OPENAI_API_KEY"] = ""
-    st.session_state["authentication_status"] = False
+    reset_list = ["authentication_status","lecture","language"]
+    for item in reset_list:
+        st.session_state[item] = False
     st.session_state["username"] = None
     st.experimental_rerun()
 
@@ -90,7 +92,7 @@ def login_user(username,password):
         database_pw = userdb[userdb["username"]==username]["password"].iloc[0]
     except IndexError:
         st.warning("Username not correct.")
-        st.stop()
+        return 
     if bcrypt.checkpw(password.encode(),database_pw.encode()):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
@@ -186,3 +188,15 @@ def change_openai_apikey(change_info):
             st.warning("New OPENAI API KEY is wrong.")            
     else:
         st.warning("Old Password not correct.")
+
+def check_login(render_login_template=False):
+    if st.session_state["authentication_status"]:
+        logout = st.sidebar.button("Logout")
+        if logout:
+            logout_user()
+        return True
+    else:
+        if render_login_template:
+            render_login_register()
+        else:
+            st.warning("Login on the 'ai_slide_talk' page.")

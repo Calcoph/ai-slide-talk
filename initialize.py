@@ -54,12 +54,12 @@ def get_default_messages():
 defaults = [
     ("history", lambda: []),
     ("explainer", lambda: False),
-    ("language", lambda: "english"),
+    ("language", lambda: False),
     ("lecture_list", load_lecturenames),
-    ("lecture", init_lecture),
-    ("messages", get_default_messages),
-    ("qa", streamlit_setup_qa),
-    ("chatbot", streamlit_setup_explainer_bot),
+    ("lecture", lambda: False),
+    ("messages", lambda: []),
+    #("qa", streamlit_setup_qa),
+    #("chatbot", streamlit_setup_explainer_bot),
     #("authentication_status", lambda: False)
 ]
 

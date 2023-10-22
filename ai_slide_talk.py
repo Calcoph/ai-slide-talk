@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from auth_helpers import logout_user, render_login_register
+from auth_helpers import check_login
 from chat_helpers import render_chat_layout
 from initialize import initialize_session_state
 import os
@@ -28,23 +28,12 @@ for var in init_variables:
 
 userdb = load_userdb()
 
-if st.session_state["authentication_status"]:
+if check_login(render_login_template=True):
     
     initialize_session_state()
     ###
     # CHAT FRONTEND
     ###
-    logout = st.sidebar.button("Logout")
-    if logout:
-        logout_user()
-    #logout = st.sidebar.button("Logout")
     st.subheader(f"Hey {st.session_state['username']} 👋")
 
-    # st.subheader("REST OF FORNTEND GOES HERE")
-
     render_chat_layout()
-else:
-    ###
-    # Login/Register FRONTEND
-    ###
-    render_login_register()

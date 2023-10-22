@@ -4,10 +4,7 @@ from auth_helpers import *
 
 userdb = pd.read_json("data/mockup_userdb.json")
 
-if st.session_state["authentication_status"] is True:
-    logout = st.sidebar.button("Logout")
-    if logout:
-        logout_user()
+if check_login():
 
     changepw_tab, change_api_tab = st.tabs(["**Change Password**", "**Change OPENAI API KEY**"])
     with changepw_tab:
@@ -33,5 +30,3 @@ if st.session_state["authentication_status"] is True:
                                "newapikey":newapikey}
                 
                 change_openai_apikey(change_info=change_info)
-else:
-    st.warning("Login on the Mainpage.")

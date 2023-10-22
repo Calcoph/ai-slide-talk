@@ -4,7 +4,8 @@ from langchain.document_loaders import PyPDFLoader,PDFPlumberLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-
+from auth_helpers import logout_user,check_login
+from initialize import load_lecturenames
 
 def create_faiss_store(pdf_path: str, lecturename: str,username):
     with st.empty():
@@ -32,20 +33,23 @@ def save_uploadedfile(uploadedfile,lecturename, username):
         f.write(uploadedfile.getbuffer())
     return None
 
-with st.form("lectureupload"):
-    lecturename = st.text_input("Enter the Lecturename")
-    pdf = st.file_uploader("Upload your lecture slides.",type="pdf")
-    submit = st.form_submit_button("Upload")
+if check_login():
+    st.header("Lecture Upload")
+    with st.form("lectureupload"):
+        lecturename = st.text_input("Enter the Lecturename")
+        pdf = st.file_uploader("Upload your lecture slides.",type="pdf")
+        submit = st.form_submit_button("Upload")
 
-if submit:
-    if "_" in lecturename:
-        st.warning("The Lecturename must not contain an underscore  ( _ ) .")
-        st.stop()
-    save_uploadedfile(pdf,
-                      lecturename=lecturename,
-                      username=st.session_state["username"])
+    if submit:
+        if "_" in lecturename:
+            st.warning("The Lecturename must not contain an underscore  ( _ ) .")
+            st.stop()
+        save_uploadedfile(pdf,
+                        lecturename=lecturename,
+                        username=st.session_state["username"])
 
-    with st.spinner("Processing.."):
-        create_faiss_store(f"data/pdfs/{st.session_state['username']}/{lecturename}.pdf",
-                           lecturename=lecturename,
-                           username=st.session_state["username"])
+        with st.spinner("Processing.."):
+            create_faiss_store(f"data/pdfs/{st.session_state['username']}/{lecturename}.pdf",
+                            lecturename=lecturename,
+                            username=st.session_state["username"])
+            load_lecturenames()

@@ -1,6 +1,6 @@
 import streamlit as st
 from history_helpers import load_chat_history,save_history
-import os 
+from initialize import streamlit_setup_qa
 
 def render_chat_layout():
     # if "lecture" not in st.session_state:
@@ -13,18 +13,23 @@ def render_chat_layout():
     with st.sidebar:
         with st.expander("Select a Lecture & Language"):
             with st.form("lecture_change"):
-                st.session_state["lecture"] = st.selectbox("Select the lecture you want to chat with.", options=st.session_state["lecture_list"])
-                st.session_state["language"] = st.radio("Choose language of Answer", options=["English","Spanish","German"], horizontal=True)
+                lecture = st.selectbox("Select the lecture you want to chat with.", options=st.session_state["lecture_list"])
+                language = st.radio("Choose language of Answer", options=["English","Spanish","German"], horizontal=True)
                 lecture_change = st.form_submit_button("Change lecture & language")
+        
         if lecture_change:
+            st.session_state["lecture"] = lecture
+            st.session_state["language"] = language
             load_chat_history(st.session_state["username"],
                             st.session_state["lecture"],
                             newest_k=10)
+            st.session_state["qa"] = streamlit_setup_qa()
             
-            ### missing: CHANGE OF MODEL
-    load_chat_history(st.session_state["username"],
-                            st.session_state["lecture"],
-                            newest_k=10)
+    if (st.session_state["lecture"] and st.session_state["language"]) == False:
+        st.success("⬅️ Select a language and a lecture on the side.")
+        st.stop()    
+
+
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
     st.chat_message("assistant").write(f"You are chatting with the **{st.session_state['lecture']}** slides in **{st.session_state['language']}**. How can I help you?")
@@ -34,10 +39,12 @@ def render_chat_layout():
         st.session_state.messages.append({"role": "user", "content": prompt})
         #write in chat
         st.chat_message("user").write(prompt)
-        
+        response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
+        slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
+        msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
         #simulates the response of the AI
-        msg = {"role":"assistant",
-            "content":"This is a mockup message."}
+        # msg = {"role":"assistant",
+        #     "content":"This is a mockup message."}
         # add AI response to session_state messages
         st.session_state.messages.append(msg)
         #write in chat
