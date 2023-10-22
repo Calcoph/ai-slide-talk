@@ -49,6 +49,17 @@ def render_login_register():
                         }
             with st.spinner("Registering User"):
                 create_new_user(userinfo=userinfo,check_key=False)    
+@st.cache_data()
+def load_userdb():
+    userdb_path = "data/mockup_userdb.json"
+    if os.path.isfile(userdb_path):
+        userdb = pd.read_json("data/mockup_userdb.json")
+    else:
+        if not os.path.isdir(f"data"):
+            os.makedirs(f"data")
+        userdb = pd.DataFrame([{"email":None,"username":None,"password":None,"OPENAI_API_KEY":None}])
+        userdb.to_json(userdb_path,orient="records",indent=4)
+    return userdb
 
 def check_api_key(key):
     try:
