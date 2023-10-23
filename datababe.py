@@ -6,6 +6,7 @@ class Database:
     def __init__(self, database):
         self.mydb = mysql.connector.connect(
             host=st.secrets["mysql_host"],
+            port=st.secrets["mysql_port"],
             user=st.secrets["mysql_user"],
             password=st.secrets["mysql_password"]
         )
