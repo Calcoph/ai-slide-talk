@@ -9,7 +9,7 @@ def render_chat_layout():
 
     ## main page
     if (st.session_state["lecture"] and st.session_state["language"]) == False:
-        st.success("⬅️ Select a language and a lecture toch chat on the side.")
+        st.success("⬅️ Select a language and a lecture to chat on the side.")
         st.stop()    
 
     for msg in st.session_state.messages:

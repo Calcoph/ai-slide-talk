@@ -22,7 +22,7 @@ def load_chat_history(username,lecture,newest_k=10):
         historydb = load_history()
         st.session_state.messages = []
         st.session_state.history = []
-        filtered_history = historydb[(historydb["username"]==username) & (historydb["lecture"]==lecture)]
+        filtered_history = historydb[(historydb["username"]==username) & (historydb["lecture"]==lecture)][:-newest_k]
         for msg in filtered_history.to_dict("records"):
             st.session_state.messages.append({"role":"user","content":msg["prompt"]})
             st.session_state.messages.append({"role":"assistant","content":msg["message"]})
