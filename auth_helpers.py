@@ -4,6 +4,7 @@ import pandas as pd
 import os, string, random, smtplib
 import bcrypt
 from cryptography.fernet import Fernet
+from history_helpers import load_history
 
 def render_login_register():
     ##
@@ -107,6 +108,7 @@ def login_user(username,password):
     if bcrypt.checkpw(password.encode(),database_pw.encode()):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
+        st.session_state["userhistory"] = load_history(st.session_state["username"])
         os.environ["OPENAI_API_KEY"] = decrypt_api_key(userdb[userdb["username"]==st.session_state["username"]]["OPENAI_API_KEY"].iloc[0])
         st.experimental_rerun()
     else:

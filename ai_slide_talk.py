@@ -11,9 +11,6 @@ for var in init_variables:
     if var not in st.session_state:
         st.session_state[var] = None
 
-
-userdb = load_userdb()
-
 if check_login(render_login_template=True):
     
     initialize_session_state()
