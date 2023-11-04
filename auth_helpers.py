@@ -8,6 +8,7 @@ from history_helpers import load_history
 
 def render_login_register():
     ##
+
     ## LOGIN
     ##
     login_tab, register_tab = st.tabs(["**Login**", "**Register**"])
@@ -55,7 +56,7 @@ def load_userdb():
     userdb_path = "data/mockup_userdb.json"
     if os.path.isfile(userdb_path):
         userdb = pd.read_json("data/mockup_userdb.json")
-    else:
+    else: 
         if not os.path.isdir(f"data"):
             os.makedirs(f"data")
         userdb = pd.DataFrame([{"email":None,"username":None,"password":None,"OPENAI_API_KEY":None}])
@@ -96,7 +97,7 @@ def logout_user():
     for item in reset_list:
         st.session_state[item] = False
     st.session_state["username"] = None
-    st.experimental_rerun()
+    st.rerun()
 
 def login_user(username,password):
     userdb = pd.read_json("data/mockup_userdb.json")
@@ -110,7 +111,7 @@ def login_user(username,password):
         st.session_state["username"] = username
         st.session_state["userhistory"] = load_history(st.session_state["username"])
         os.environ["OPENAI_API_KEY"] = decrypt_api_key(userdb[userdb["username"]==st.session_state["username"]]["OPENAI_API_KEY"].iloc[0])
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.error("Password is wrong.")
    
@@ -165,7 +166,7 @@ def send_new_password(email):
     new_pw = generate_random_pw()
     if send_email(recipient=recipient,generated_pw=new_pw):
         salt = bcrypt.gensalt()
-        userdb.loc[userdb.email == recipient["email"], "password"] = bcrypt.hashpw(password=new_pw.encode(),salt=salt)
+        userdb.loc[userdb.email == recipient["email"], "password"] = bcrypt.hashpw(password=new_pw.encode(),salt=salt)    
         userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
         st.success("Succesfully send new password.")
         return True

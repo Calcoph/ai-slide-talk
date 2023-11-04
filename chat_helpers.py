@@ -3,13 +3,9 @@ from history_helpers import load_chat_history,save_history
 from initialize import streamlit_setup_qa
 
 def render_chat_layout():
-    ## in sidebar
-
-    render_lecture_selector()
-
     ## main page
     if (st.session_state["lecture"] and st.session_state["language"]) == False:
-        st.success("⬅️ Select a language and a lecture to chat on the side.")
+        st.success("⬅️ Select a language and a lecture on the side.")
         st.stop()    
 
     for msg in st.session_state.messages:
