@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd 
 from auth_helpers import *
 
-userdb = pd.read_json("data/mockup_userdb.json")
-
 if check_login():
 
     changepw_tab, change_api_tab = st.tabs(["**Change Password**", "**Change OPENAI API KEY**"])
