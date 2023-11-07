@@ -2,3 +2,4 @@
 .streamlit/
 __pycache__/
 data/
+tmp/

@@ -6,30 +6,29 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from auth_helpers import logout_user,check_login
 from initialize import load_lecturenames
+from gdrive_helpers import upload_lecture_to_drive
 
-def create_faiss_store(pdf_path: str, lecturename: str,username):
-    with st.empty():
-        st.info("Transforming PDF to Documents.")
-        loader = PyPDFLoader(pdf_path)
-        pages = loader.load_and_split()
-        text_splitter = CharacterTextSplitter(separator = "\n", chunk_size = 1000, 
-                                                chunk_overlap  = 200, length_function = len)
-        docs = text_splitter.split_documents(pages)
-        for doc in docs:
-            doc.metadata["page"] +=1
-        st.info("Creating Embeddings.")
-        embeddings = OpenAIEmbeddings()
-        vectorstore = FAISS.from_documents(docs, embeddings)
-        if not os.path.isdir(f"data/embeddings/{username}"):
-            os.makedirs(f"data/embeddings/{username}")
-        vectorstore.save_local(f"data/embeddings/{st.session_state['username']}/faiss_{lecturename}")
-        st.success("Finished.")
+def create_faiss_store(pdf_path):
+    loader = PyPDFLoader(pdf_path)
+    pages = loader.load_and_split()
+    text_splitter = CharacterTextSplitter(separator = "\n", chunk_size = 1000, 
+                                            chunk_overlap  = 200, length_function = len)
+    docs = text_splitter.split_documents(pages)
+    for doc in docs:
+        doc.metadata["page"] +=1
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_documents(docs, embeddings)
+    faiss_path = "tmp/uploaded_files/"
+    if not os.path.isdir(faiss_path):
+        os.makedirs(faiss_path)
+    vectorstore.save_local(faiss_path)
     return vectorstore
 
-def save_uploadedfile(uploadedfile,lecturename, username):
-    if not os.path.isdir(f"data/pdfs/{username}"):
-        os.makedirs(f"data/pdfs/{username}")
-    with open(os.path.join(f"data/pdfs/{username}/",f"{lecturename}.pdf"),"wb") as f:
+def save_uploadedfile(uploadedfile,lecturename):
+    upload_path = "tmp/uploaded_files"
+    if not os.path.isdir(upload_path):
+        os.makedirs(upload_path)
+    with open(os.path.join(upload_path,f"{lecturename}.pdf"),"wb") as f:
         f.write(uploadedfile.getbuffer())
     return None
 
@@ -45,11 +44,14 @@ if check_login():
             st.warning("The Lecturename must not contain an underscore  ( _ ) .")
             st.stop()
         save_uploadedfile(pdf,
-                        lecturename=lecturename,
-                        username=st.session_state["username"])
+                        lecturename=lecturename)
 
         with st.spinner("Processing.."):
-            create_faiss_store(f"data/pdfs/{st.session_state['username']}/{lecturename}.pdf",
-                            lecturename=lecturename,
-                            username=st.session_state["username"])
-            load_lecturenames()
+            with st.empty():
+                st.info("Creating Embeddings")
+                create_faiss_store(f"tmp/uploaded_files/{lecturename}.pdf")
+
+                st.info("Uploading Data")
+                upload_lecture_to_drive(st.session_state["username"],
+                                    lecturename=lecturename)
+            

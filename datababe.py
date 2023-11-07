@@ -50,6 +50,18 @@ class Database:
         cursor.execute(update_query,userdata)
         self.mydb.commit()
 
+    def add_filestorage(self,file_entry):
+        insert_query = "INSERT INTO filestorage (username, lecture, pdf_id, index_faiss_id, index_pkl_id) VALUES (%s, %s, %s, %s, %s)"
+        cursor = self.mydb.cursor()
+        cursor.execute(insert_query, 
+                       (file_entry))
+        self.mydb.commit()
+    
+    def update_filestorage(self,update_query, fileinfos):
+        cursor = self.mydb.cursor()
+        cursor.execute(update_query,fileinfos)
+        self.mydb.commit()
+        
     def __checkDatabaseExists(self, database):
         cursor = self.mydb.cursor()
         cursor.execute("SHOW DATABASES")

@@ -15,16 +15,21 @@ import streamlit as st
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 import os
+from datababe import *
 
 def init_lecture():
     st.session_state["lecture"] = st.session_state["lecture_list"][0]
 
 def load_lecturenames():
-        try:
-            st.session_state["lecture_list"] = [x.split("_")[-1] for x in os.listdir(f"data/embeddings/{st.session_state['username']}")]
-        except:
-            st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
-            st.stop()
+    db = Database(st.secrets["mysql_dbName"])
+    uploaded_lectures = db.query("SELECT lecture from filestorage WHERE username = %s",
+                                                    (st.session_state["username"],))
+    uploaded_lectures = set([x[0] for x in uploaded_lectures])
+
+    if not uploaded_lectures:
+        st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
+        st.stop()
+    st.session_state["lecture_list"] = uploaded_lectures
 
 def streamlit_setup_explainer_bot():
     return setup_explainer_bot(st.session_state["language"])
@@ -74,7 +79,7 @@ def initialize_session_state():
 def setup_qa(lecture, language):
 
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local(f"data/embeddings/{st.session_state['username']}/faiss_{lecture}",embeddings=embeddings)
+    vectorstore = FAISS.load_local(f"tmp/embeddings",embeddings=embeddings)
     
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
