@@ -35,17 +35,17 @@ def setup_pydrive():
 def get_lecture_data(username,lecture):
     drive = setup_pydrive()
     db = Database(st.secrets["mysql_dbName"])
-    ids = db.query("SELECT pdf_id,index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
+    ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
     if not os.path.isdir(f"tmp"):
         os.makedirs(f"tmp")
         os.makedirs(f"tmp/embeddings")
 
-    for id, file_kind in zip(ids, ["pdf","faiss","pkl"]):
+    for id, file_kind in zip(ids, ["faiss","pkl"]):
         file = drive.CreateFile({'id': id})
-        if file_kind == "pdf":
-            file.GetContentFile("tmp/pdf.pdf")
-        else:
-            file.GetContentFile(f"tmp/embeddings/index.{file_kind}")
+        # if file_kind == "pdf":
+        #     file.GetContentFile("tmp/pdf.pdf")
+        # else:
+        file.GetContentFile(f"tmp/embeddings/index.{file_kind}")
     return True
 
 
