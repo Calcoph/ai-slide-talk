@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from auth_helpers import check_login
+from auth_helpers import check_login, load_userdb
 from chat_helpers import render_chat_layout, render_lecture_selector
 from initialize import initialize_session_state
 

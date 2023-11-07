@@ -5,6 +5,7 @@ import os, string, random, smtplib
 import bcrypt
 from cryptography.fernet import Fernet
 from history_helpers import load_history
+from datababe import Database
 
 def render_login_register():
     ##
@@ -51,17 +52,13 @@ def render_login_register():
                         }
             with st.spinner("Registering User"):
                 create_new_user(userinfo=userinfo,check_key=False)    
-@st.cache_data()
+
+#@st.cache_data()
 def load_userdb():
-    userdb_path = "data/mockup_userdb.json"
-    if os.path.isfile(userdb_path):
-        userdb = pd.read_json("data/mockup_userdb.json")
-    else: 
-        if not os.path.isdir(f"data"):
-            os.makedirs(f"data")
-        userdb = pd.DataFrame([{"email":None,"username":None,"password":None,"OPENAI_API_KEY":None}])
-        userdb.to_json(userdb_path,orient="records",indent=4)
-    return userdb
+    mydb = Database(st.secrets["mysql_dbName"])
+    userdb = mydb.query("SELECT * FROM users")
+    return pd.DataFrame(userdb,
+                        columns=["id","email","username","password","OPENAI_API_KEY"])
 
 def check_api_key(key):
     try:
@@ -76,19 +73,18 @@ def check_api_key(key):
         return False
 
 def create_new_user(userinfo, check_key=True):
-    userdb = pd.read_json("data/mockup_userdb.json")
+    userdb = load_userdb()
     #check if api key is valid, can be disabled for development purposes, set "check_key" to False
     if not check_api_key(decrypt_api_key(userinfo["OPENAI_API_KEY"])) and check_key:
         st.error("Your OPENAI API-KEY is wrong. Check again.")
-        st.stop()
+        st.stop()        
     # ensure username to be unique
-    if len(userdb) != 0:
-        if userinfo["username"] in list(userdb["username"]):
-            st.error("Username already taken. Choose another one.")
-            st.stop()
+    if userinfo["username"] in list(userdb["username"]):
+        st.error("Username already taken. Choose another one.")
+        st.stop()
     #add user to database
-    userdb = pd.concat([userdb,pd.DataFrame(userinfo,index=[0])])     
-    userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+    db = Database(st.secrets["mysql_dbName"])
+    db.add_user(userinfo)
     st.success("You registered succesfully. Login with your credentials.")
 
 def logout_user():
@@ -100,17 +96,17 @@ def logout_user():
     st.rerun()
 
 def login_user(username,password):
-    userdb = pd.read_json("data/mockup_userdb.json")
+    db = Database(st.secrets["mysql_dbName"])
     try:
-        database_pw = userdb[userdb["username"]==username]["password"].iloc[0]
+        userinfo = db.query(f"SELECT * FROM users WHERE username = %s",(username,))[0]
     except IndexError:
         st.warning("Username not correct.")
         return 
-    if bcrypt.checkpw(password.encode(),database_pw.encode()):
+    if bcrypt.checkpw(password.encode(),userinfo[3].encode()):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
-        st.session_state["userhistory"] = load_history(st.session_state["username"])
-        os.environ["OPENAI_API_KEY"] = decrypt_api_key(userdb[userdb["username"]==st.session_state["username"]]["OPENAI_API_KEY"].iloc[0])
+        st.session_state["userhistory"] = load_history()
+        os.environ["OPENAI_API_KEY"] = decrypt_api_key(userinfo[4])
         st.rerun()
     else:
         st.error("Password is wrong.")
@@ -156,18 +152,21 @@ def generate_random_pw(length: int=16) -> str:
     return ''.join(random.choice(letters) for i in range(length)).replace(' ','')
  
 def send_new_password(email):
-    userdb = pd.read_json("data/mockup_userdb.json")
+    db = Database(st.secrets["mysql_dbName"])
     try:
-        recipient = {"email":userdb[userdb["email"]==email.lower()]["email"].iloc[0],
-                        "username": userdb[userdb["email"]==email.lower()]["username"].iloc[0]}
-    except:
+        userinfo = db.query(f"SELECT * FROM users WHERE email = %s",(email,))[0]
+    except IndexError:
         st.error("E-Mail not correct.")
         st.stop()
+
+    recipient = {"email":userinfo[1],
+                "username":userinfo[2]}
+    
     new_pw = generate_random_pw()
     if send_email(recipient=recipient,generated_pw=new_pw):
         salt = bcrypt.gensalt()
-        userdb.loc[userdb.email == recipient["email"], "password"] = bcrypt.hashpw(password=new_pw.encode(),salt=salt)    
-        userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+        new_pw_enctrypted = bcrypt.hashpw(password=new_pw.encode(),salt=salt)
+        db.update_user("""UPDATE users SET password = %s WHERE username = %s""",(new_pw_enctrypted,st.session_state["username"]))
         st.success("Succesfully send new password.")
         return True
     else:
@@ -175,27 +174,26 @@ def send_new_password(email):
         return None
     
 def change_password(change_info):
-    userdb = pd.read_json("data/mockup_userdb.json")
-    query_res = userdb[userdb["username"]==st.session_state["username"]]["password"].iloc[0]
+    db = Database(st.secrets["mysql_dbName"])
+    user_pw = db.query(f"SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if change_info["newpw1"] != change_info["newpw2"]:
         st.warning("New passwords are not equal.")
         st.stop()
-    if bcrypt.checkpw(change_info["oldpw"].encode(),query_res.encode()):
+    if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
         salt = bcrypt.gensalt()
-        userdb.loc[userdb.username == st.session_state["username"], "password"] = bcrypt.hashpw(password=change_info["newpw2"].encode(),salt=salt)
-        userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+        new_pw_encrypted = bcrypt.hashpw(password=change_info["newpw2"].encode(),salt=salt)
+        db.update_user("""UPDATE users SET password = %s WHERE username = %s""",(new_pw_encrypted,st.session_state["username"]))
         st.success("Password changed succesfully.")
     else:
         st.warning("Old Password not correct.")
     
 
 def change_openai_apikey(change_info):
-    userdb = pd.read_json("data/mockup_userdb.json")
-    query_res = userdb[userdb["username"]==st.session_state["username"]]["password"].iloc[0]
-    if bcrypt.checkpw(change_info["oldpw"].encode(),query_res.encode()):
+    db = Database(st.secrets["mysql_dbName"])
+    user_pw = db.query("SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
+    if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
         if check_api_key(change_info["newapikey"]):
-            userdb.loc[userdb.username == st.session_state["username"], "OPENAI_API_KEY"] = encrypt_api_key(change_info["newapikey"])
-            userdb.to_json("data/mockup_userdb.json",orient="records",indent=4)
+            db.update_user("UPDATE users SET openai_api_key = %s WHERE username = %s",(encrypt_api_key(change_info["newapikey"]),st.session_state["username"]))
             st.success("OPENAI API KEY changed successfully.")
             os.environ["OPENAI_API_KEY"] = change_info["newapikey"]
         else:

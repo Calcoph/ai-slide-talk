@@ -1,5 +1,5 @@
 import streamlit as st
-from history_helpers import load_chat_history,save_history
+from history_helpers import load_chat_history,save_history,load_history
 from initialize import streamlit_setup_qa
 
 def render_chat_layout():
@@ -17,24 +17,21 @@ def render_chat_layout():
         st.session_state.messages.append({"role": "user", "content": prompt})
         #write in chat
         st.chat_message("user").write(prompt)
-        response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
-        slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
-        msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
-        #simulates the response of the AI
-        # msg = {"role":"assistant",
-        #     "content":"This is a mockup message."}
-        # add AI response to session_state messages
-        st.session_state.messages.append(msg)
-        st.session_state.history.append((prompt,response["answer"]))
-        #write in chat
-        st.chat_message("assistant").write(msg["content"])
+        with st.spinner("Thinking 🤔"):
+            response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
+            slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
+            msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
+            st.session_state.messages.append(msg)
+            st.session_state.history.append((prompt,response["answer"]))
+            #write in chat
+            st.chat_message("assistant").write(msg["content"])
 
-        message_info = {"prompt":prompt,"message":msg["content"],
-                                "username":st.session_state["username"],
-                                "lecture": st.session_state["lecture"],
-                                "language":st.session_state["language"],
-                                }
-        save_history(message_info)
+            message_info = {"prompt":prompt,"message":msg["content"],
+                                    "username":st.session_state["username"],
+                                    "lecture": st.session_state["lecture"],
+                                    "language":st.session_state["language"],
+                                    }
+            save_history(message_info)
 
 def render_lecture_selector():
     with st.sidebar:
