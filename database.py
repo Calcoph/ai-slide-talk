@@ -67,14 +67,58 @@ class Database:
         cursor.execute("SHOW DATABASES")
         databases = [database[0] for database in cursor]
         if not database in databases:
-            print(f"Error: database \"{database}\" not found")
-            sys.exit(1)
+            print(f"Warning: database \"{database}\" not found")
+            print(f"Creating database \"{database}\"...")
+            self.create_database()
+    
+    def create_database(self):
+        cnx =  mysql.connector.connect(host="localhost",
+                                    user=st.secrets["mysql_user"],
+                                password=st.secrets["mysql_password"])
+        create_db_query = f"CREATE DATABASE {st.secrets['mysql_dbName']}"
+        with cnx.cursor() as cursor:
+            try:
+                cursor.execute(create_db_query)
+            except:
+                pass
+        create_users_table_query = """CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        username VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        openai_api_key VARCHAR(255) NOT NULL
+        )
+        """
+        # Create the 'history' table
+        create_history_table_query = """
+        CREATE TABLE IF NOT EXISTS history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            prompt TEXT NOT NULL,
+            message TEXT NOT NULL,
+            username VARCHAR(255) NOT NULL,
+            lecture VARCHAR(255),
+            language VARCHAR(255)
+        )
+        """
+
+        create_filestorage_table_query = """
+        CREATE TABLE IF NOT EXISTS filestorage (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL,
+            lecture VARCHAR(255) NOT NULL,
+            pdf_id VARCHAR(255) NOT NULL,
+            index_faiss_id VARCHAR(255) NOT NULL,
+            index_pkl_id VARCHAR(255) NOT NULL
+        )
+        """
+        mydb = Database(st.secrets["mysql_dbName"])
+        mydb.query(create_history_table_query)
+        mydb.query(create_users_table_query)
+        mydb.query(create_filestorage_table_query)
 
 # Usage example
-"""
 mydb = Database(st.secrets["mysql_dbName"])
 result = mydb.query("SHOW DATABASES")
 print(result)
 databases = [database[0] for database in result]
 print(databases)
-"""
