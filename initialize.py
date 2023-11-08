@@ -15,7 +15,7 @@ import streamlit as st
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 import os
-from datababe import *
+from database import *
 
 def init_lecture():
     st.session_state["lecture"] = st.session_state["lecture_list"][0]
