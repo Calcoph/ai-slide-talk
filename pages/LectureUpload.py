@@ -53,7 +53,7 @@ if check_login():
 
                 st.info("Uploading Data")
                 upload_lecture_to_drive(st.session_state["username"],
-                                    lecturename=lecturename)
+                                    lecture=lecturename)
                 load_lecturenames()
                 st.success("Upload successful")
                 

@@ -49,30 +49,28 @@ def get_lecture_data(username,lecture):
         file.GetContentFile(f"tmp/{lecture}/embeddings/index.{file_kind}")
     return True
 
-
-def create_folder(foldername,parent_folder_id=None):
+def create_folder(foldername, parent_folder_id=None, permissions = False):
     drive = setup_pydrive()
-
-    folderlist = (drive.ListFile  ({'q': "mimeType='application/vnd.google-apps.folder' and trashed=false"}).GetList())
-
-    titlelist =  [x['title'] for x in folderlist]
-    if foldername in titlelist:
-        for item in folderlist:
-            if item['title']==foldername:
-                return item['id'], True
-  
-    file_metadata_root = {
+    search_term = f"mimeType='application/vnd.google-apps.folder'"
+    if parent_folder_id != None:
+        search_term +=f"and '{parent_folder_id}' in parents"
+    content_list = drive.ListFile({'q': search_term}).GetList()
+    content_names = [x["title"] for x in content_list]
+    if foldername in content_names:
+        return list(filter(lambda item: item['title'] == foldername, content_list))[0]["id"], True
+    else:
+        file_metadata_root = {
         'title': foldername,
         'mimeType': 'application/vnd.google-apps.folder',
         "parents":[{"id":parent_folder_id}]
     }
     if parent_folder_id == None:
         del file_metadata_root['parents']
-    user_root_folder = drive.CreateFile(file_metadata_root)
-    user_root_folder.Upload()
-    user_root_folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
-        
-    return user_root_folder['id'], False
+    folder = drive.CreateFile(file_metadata_root)
+    folder.Upload()
+    if permissions:
+        folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
+    return folder["id"], False
 
 def upload_file_to_google(file_path,parent_folder_id, file_name):
     drive = setup_pydrive()
@@ -84,35 +82,30 @@ def upload_file_to_google(file_path,parent_folder_id, file_name):
     # file1.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
     return file1['id']
 
-def upload_lecture_to_drive(username,lecturename):
-    # Step 1: Check if userfolder exists
-    st.toast("Uploading Lecture")
-    user_root_folder_id, existed_root = create_folder(username)
-    # Step 2: Check if lecture folder exists
-    lecture_folder_id, existed_lecture = create_folder(lecturename,
-                                                    parent_folder_id=user_root_folder_id)
-    
-    if existed_lecture:
+def upload_lecture_to_drive(username, lecture):
+    # root_folder_id, root_existed = create_folder("slidechatter",permissions=True)
+    user_folder_id, user_folder_existed = create_folder(username, parent_folder_id=st.secrets["drive_root_folder"])
+    lecture_folder_id, lecture_existed = create_folder(lecture, parent_folder_id=user_folder_id)
+
+    if lecture_existed:
         delete_from_folder(lecture_folder_id)
-    # Step3: upload pdf
-    pdf_folder, existed_pdf = create_folder("pdfs",parent_folder_id=lecture_folder_id)
-    pdf_id = upload_file_to_google(f"tmp/uploaded_files/{lecturename}.pdf",pdf_folder,f"{lecturename}.pdf")
-    # Step 4 create embeddings folder
-    embeddings_folder, existed_embeddings = create_folder("embeddings",parent_folder_id=lecture_folder_id)
-    st.toast("Uploading Embeddings")
+
+    pdf_id = upload_file_to_google(f"tmp/uploaded_files/{lecture}.pdf",
+                                lecture_folder_id,f"{lecture}.pdf")
     index_faiss_id = upload_file_to_google("tmp/uploaded_files/index.faiss",
-                        parent_folder_id=embeddings_folder,
-                        file_name="index.faiss")
+                            parent_folder_id=lecture_folder_id,
+                            file_name="index.faiss")
     index_pkl_id = upload_file_to_google("tmp/uploaded_files/index.pkl",
-                        parent_folder_id=embeddings_folder,
-                        file_name="index.pkl")
+                            parent_folder_id=lecture_folder_id,
+                            file_name="index.pkl")
+
     db = Database(st.secrets["mysql_dbName"])
-    
-    if existed_lecture:
-        db.update_filestorage("UPDATE filestorage SET pdf_id = %s, index_faiss_id = %s, index_pkl_id= %s WHERE username = %s AND lecture = %s""",(pdf_id, index_faiss_id, index_pkl_id,username,lecturename))
+    if lecture_existed:
+        db.update_filestorage("UPDATE filestorage SET pdf_id = %s, index_faiss_id = %s, index_pkl_id= %s WHERE username = %s AND lecture = %s""",(pdf_id, index_faiss_id, index_pkl_id,username,lecture))
     else:
-        db.add_filestorage((username,lecturename,pdf_id, index_faiss_id, index_pkl_id))
-    return pdf_id, index_faiss_id, index_pkl_id
+        db.add_filestorage((username,lecture,pdf_id, index_faiss_id, index_pkl_id))
+
+    return True
 
 
 def delete_from_folder(folder_id):

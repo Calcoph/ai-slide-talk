@@ -22,7 +22,6 @@ def init_lecture():
 
 def load_lecturenames():
     db = Database(st.secrets["mysql_dbName"])
-    st.write(db)
     uploaded_lectures = db.query("SELECT lecture from filestorage WHERE username = %s",
                                                     (st.session_state["username"],))
     uploaded_lectures = set([x[0] for x in uploaded_lectures])
