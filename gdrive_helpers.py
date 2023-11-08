@@ -2,7 +2,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import streamlit as st
-from datababe import Database
+from database import Database
 import os
 from tqdm import tqdm
 
