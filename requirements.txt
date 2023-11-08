@@ -113,3 +113,4 @@ websockets==11.0.3
 win32-setctime==1.1.0
 yarl==1.9.2
 mysql-connector-python
+oauth2client
