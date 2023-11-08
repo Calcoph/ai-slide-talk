@@ -1,4 +1,4 @@
-from datababe import Database
+from database import Database
 import pandas as pd
 import streamlit as st
 import os
