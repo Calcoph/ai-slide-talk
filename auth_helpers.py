@@ -5,7 +5,7 @@ import os, string, random, smtplib
 import bcrypt
 from cryptography.fernet import Fernet
 from history_helpers import load_history
-from datababe import Database
+from database import Database
 
 def render_login_register():
     ##
