@@ -79,7 +79,7 @@ def initialize_session_state():
 def setup_qa(lecture, language):
 
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local(f"tmp/embeddings",embeddings=embeddings)
+    vectorstore = FAISS.load_local(f"tmp/{lecture}/embeddings",embeddings=embeddings)
     
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.

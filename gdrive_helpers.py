@@ -36,16 +36,17 @@ def get_lecture_data(username,lecture):
     drive = setup_pydrive()
     db = Database(st.secrets["mysql_dbName"])
     ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
-    if not os.path.isdir(f"tmp"):
-        os.makedirs(f"tmp")
-        os.makedirs(f"tmp/embeddings")
-
+    if not os.path.isdir(f"tmp/{lecture}"):
+        #os.makedirs(f"tmp/{lecture}")
+        os.makedirs(f"tmp/{lecture}/embeddings")
+    else:
+        return True
     for id, file_kind in zip(ids, ["faiss","pkl"]):
         file = drive.CreateFile({'id': id})
         # if file_kind == "pdf":
         #     file.GetContentFile("tmp/pdf.pdf")
         # else:
-        file.GetContentFile(f"tmp/embeddings/index.{file_kind}")
+        file.GetContentFile(f"tmp/{lecture}/embeddings/index.{file_kind}")
     return True
 
 
@@ -120,6 +121,7 @@ def delete_from_folder(folder_id):
     for file in files:
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
+        
 def reset_drive():
     drive = setup_pydrive()
     file_list = drive.ListFile({'q': "trashed=false"}).GetList()

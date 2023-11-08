@@ -212,3 +212,12 @@ def check_login(render_login_template=False):
             render_login_register()
         else:
             st.warning("Login on the 'ai_slide_talk' page.")
+
+def delete_files(path):
+    if os.path.isdir(path):
+        dir = os.listdir(path)
+        for item in dir:
+            delete_files(f"{path}/{item}")
+    else:
+        os.remove(path)
+    os.rmdir(path)

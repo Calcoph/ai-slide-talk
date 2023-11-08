@@ -1,9 +1,8 @@
 import streamlit as st
-import pandas as pd 
 from auth_helpers import *
 
 if check_login():
-
+    st.title("User Settings")
     changepw_tab, change_api_tab = st.tabs(["**Change Password**", "**Change OPENAI API KEY**"])
     with changepw_tab:
         with st.form("changepw",clear_on_submit=True):
