@@ -83,8 +83,8 @@ def upload_file_to_google(file_path,parent_folder_id, file_name):
     return file1['id']
 
 def upload_lecture_to_drive(username, lecture):
-    # root_folder_id, root_existed = create_folder("slidechatter",permissions=True)
-    user_folder_id, user_folder_existed = create_folder(username, parent_folder_id=st.secrets["drive_root_folder"])
+    root_folder_id, root_existed = create_folder("slidechatter",permissions=True)
+    user_folder_id, user_folder_existed = create_folder(username, parent_folder_id=root_folder_id)
     lecture_folder_id, lecture_existed = create_folder(lecture, parent_folder_id=user_folder_id)
 
     if lecture_existed:
