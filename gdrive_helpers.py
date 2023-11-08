@@ -2,7 +2,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 import streamlit as st
-from datababe import Database
+from database import Database
 import os
 from tqdm import tqdm
 
@@ -70,7 +70,7 @@ def create_folder(foldername,parent_folder_id=None):
         del file_metadata_root['parents']
     user_root_folder = drive.CreateFile(file_metadata_root)
     user_root_folder.Upload()
-    # user_root_folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
+    user_root_folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
         
     return user_root_folder['id'], False
 
