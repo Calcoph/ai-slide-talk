@@ -17,3 +17,13 @@ Mysql secure installation:
 ```
 sudo mysql_secure_installation
 ```
+Install dependencies:
+```
+sudo apt-get update
+sudo apt-get install pkg-config
+pip3 install -r requirements.txt
+```
+Start application:
+```
+streamlit run ai_slide_talk.py
+```
