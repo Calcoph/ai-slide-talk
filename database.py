@@ -115,10 +115,11 @@ class Database:
         mydb.query(create_history_table_query)
         mydb.query(create_users_table_query)
         mydb.query(create_filestorage_table_query)
-
+"""
 # Usage example
 mydb = Database(st.secrets["mysql_dbName"])
 result = mydb.query("SHOW DATABASES")
 print(result)
 databases = [database[0] for database in result]
 print(databases)
+"""
