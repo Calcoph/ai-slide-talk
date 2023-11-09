@@ -139,9 +139,9 @@ def reset_drive():
         
 def reset_database(tables=None):
     cnx =  mysql.connector.connect(host="localhost",
-                                user=st.secrets["mysql_user"],
-                                password=st.secrets["mysql_password"],
-                                database=st.secrets['mysql_dbName']
+                                user=st.secrets["my_sql"]["mysql_user"],
+                                password=st.secrets["my_sql"]["mysql_password"],
+                                database=st.secrets["my_sql"]['mysql_dbName']
                                 )
     if tables == None:
         tables = [

@@ -1,5 +1,6 @@
 import streamlit as st
 from auth_helpers import check_login
+from initialize import load_lecturenames
 import base64
 from gdrive_helpers import download_pdf
 
@@ -14,9 +15,10 @@ def displayPDF(file):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 if check_login():
+    load_lecturenames()
     with st.form(key="lecture_submit"):
         lecture = st.selectbox("Select the lecture you want to display.", options=st.session_state["lecture_list"])
-        lecture_submit = st.form_submit_button()
+        lecture_submit = st.form_submit_button("Show PDF")
     if lecture_submit:
         with st.spinner("Downloading"):
             download_pdf(st.session_state["username"],lecture)
