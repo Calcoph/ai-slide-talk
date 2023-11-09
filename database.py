@@ -75,7 +75,7 @@ class Database:
         cnx =  mysql.connector.connect(host="localhost",
                                     user=st.secrets["my_sql"]["mysql_user"],
                                 password=st.secrets["my_sql"]["mysql_password"])
-        create_db_query = f"CREATE DATABASE {st.secrets['mysql_dbName']}"
+        create_db_query = f"CREATE DATABASE {st.secrets['my_sql']['mysql_dbName']}"
         with cnx.cursor() as cursor:
             try:
                 cursor.execute(create_db_query)
