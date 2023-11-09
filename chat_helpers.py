@@ -1,7 +1,7 @@
 import streamlit as st
 from history_helpers import load_chat_history,save_history
 from initialize import streamlit_setup_qa
-from gdrive_helpers import get_lecture_data
+from gdrive_helpers import download_faiss_data
 
 def render_chat_layout():
     ## main page
@@ -48,6 +48,6 @@ def render_lecture_selector():
             load_chat_history(st.session_state["lecture"],
                             newest_k=10)
             with st.spinner("Downloading Data."):
-                get_lecture_data(st.session_state["username"],st.session_state["lecture"])
+                download_faiss_data(st.session_state["username"],st.session_state["lecture"])
                 st.session_state["qa"] = streamlit_setup_qa()
 

@@ -6,6 +6,8 @@ import bcrypt
 from cryptography.fernet import Fernet
 from history_helpers import load_history
 from database import Database
+import shutil
+import stat
 
 def render_login_register():
     ##
@@ -35,7 +37,7 @@ def render_login_register():
     ## REGISTER
     ##    
     with register_tab:
-        with st.form("register", clear_on_submit=True):   
+        with st.form("register", clear_on_submit=False):   
             st.subheader("Register")
             email = st.text_input("E-Mail")
             st.warning("Double check your E-Mail-Address, it is the only way to restore your account.")
@@ -55,7 +57,7 @@ def render_login_register():
 
 #@st.cache_data()
 def load_userdb():
-    mydb = Database(st.secrets["mysql_dbName"])
+    mydb = Database()
     userdb = mydb.query("SELECT * FROM users")
     return pd.DataFrame(userdb,
                         columns=["id","email","username","password","OPENAI_API_KEY"])
@@ -73,17 +75,19 @@ def check_api_key(key):
         return False
 
 def create_new_user(userinfo, check_key=True):
-    userdb = load_userdb()
+    db = Database()
     #check if api key is valid, can be disabled for development purposes, set "check_key" to False
     if not check_api_key(decrypt_api_key(userinfo["OPENAI_API_KEY"])) and check_key:
         st.error("Your OPENAI API-KEY is wrong. Check again.")
         st.stop()        
     # ensure username to be unique
-    if userinfo["username"] in list(userdb["username"]):
+    if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo["username"],))) != 0:
         st.error("Username already taken. Choose another one.")
         st.stop()
+    if len(db.query("SELECT * FROM users WHERE email = %s",(userinfo["email"],))) != 0:
+        st.error("Email already taken. Reset your password in the 'Login' tab.")
+        st.stop()
     #add user to database
-    db = Database(st.secrets["mysql_dbName"])
     db.add_user(userinfo)
     st.success("You registered succesfully. Login with your credentials.")
 
@@ -93,10 +97,13 @@ def logout_user():
     for item in reset_list:
         st.session_state[item] = False
     st.session_state["username"] = None
+    if os.path.isdir("tmp"):
+        delete_files("tmp")
+        delete_empty_folder("tmp")
     st.rerun()
 
 def login_user(username,password):
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     try:
         userinfo = db.query(f"SELECT * FROM users WHERE username = %s",(username,))[0]
     except IndexError:
@@ -140,8 +147,8 @@ def send_email(recipient, generated_pw):
         """
         message = 'Subject: {}\n{}'.format(subject, text)
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
-            smtp_server.login(st.secrets["gmail"], st.secrets["gmail_pw"])
-            smtp_server.sendmail(st.secrets["gmail"], recipient["email"], message)
+            smtp_server.login(st.secrets["gmail"]["gmail_email"], st.secrets["gmail"]["gmail_pw"])
+            smtp_server.sendmail(st.secrets["gmail"]["gmail_email"], recipient["email"], message)
         return True
     except:
         return None
@@ -152,7 +159,7 @@ def generate_random_pw(length: int=16) -> str:
     return ''.join(random.choice(letters) for i in range(length)).replace(' ','')
  
 def send_new_password(email):
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     try:
         userinfo = db.query(f"SELECT * FROM users WHERE email = %s",(email,))[0]
     except IndexError:
@@ -166,7 +173,7 @@ def send_new_password(email):
     if send_email(recipient=recipient,generated_pw=new_pw):
         salt = bcrypt.gensalt()
         new_pw_enctrypted = bcrypt.hashpw(password=new_pw.encode(),salt=salt)
-        db.update_user("""UPDATE users SET password = %s WHERE username = %s""",(new_pw_enctrypted,st.session_state["username"]))
+        db.update_user("""UPDATE users SET password = %s WHERE email = %s""",(new_pw_enctrypted,email))
         st.success("Succesfully send new password.")
         return True
     else:
@@ -174,7 +181,7 @@ def send_new_password(email):
         return None
     
 def change_password(change_info):
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     user_pw = db.query(f"SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if change_info["newpw1"] != change_info["newpw2"]:
         st.warning("New passwords are not equal.")
@@ -189,7 +196,7 @@ def change_password(change_info):
     
 
 def change_openai_apikey(change_info):
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     user_pw = db.query("SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
         if check_api_key(change_info["newapikey"]):
@@ -220,4 +227,12 @@ def delete_files(path):
             delete_files(f"{path}/{item}")
     else:
         os.remove(path)
-    os.rmdir(path)
+    #
+    return
+
+def delete_empty_folder(path):
+    def removeReadOnly(func, path, excinfo):
+    # Using os.chmod with stat.S_IWRITE to allow write permissions
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    shutil.rmtree(path,onerror=removeReadOnly)

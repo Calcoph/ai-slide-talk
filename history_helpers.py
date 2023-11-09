@@ -6,7 +6,7 @@ import os
 # @st.cache_data
 def load_history():
     # REPLACE WITH MYSQL
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     #user_history = db.query("SELECT * FROM history WHERE %s",(st.session_state["username"],))
     user_history = db.query("SELECT * FROM history WHERE username = %s",
                             (st.session_state["username"],))
@@ -23,6 +23,6 @@ def load_chat_history(lecture,newest_k=5):
             st.session_state.history.append((msg["prompt"],msg["message"]))
 
 def save_history(message_info):
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     db.add_history(message_info)
     st.session_state["userhistory"] = pd.concat([st.session_state["userhistory"],pd.DataFrame(message_info, index=[0])]).reset_index(drop=True)   

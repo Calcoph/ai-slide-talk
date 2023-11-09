@@ -5,22 +5,22 @@ import streamlit as st
 from database import Database
 import os
 from tqdm import tqdm
+import mysql
 
 def google_auth():
-    scope = ['https://www.googleapis.com/auth/spreadsheets',
-            "https://www.googleapis.com/auth/drive"]
+    scope = ["https://www.googleapis.com/auth/drive"]
 
     input_dict = {
     "type": "service_account",
-    "project_id": st.secrets["project_id"],
-    "private_key_id": st.secrets["private_key_id"],
-    "private_key": st.secrets["private_key"],
-    "client_email": st.secrets["client_email"],
-    "client_id": st.secrets["client_id"],
+    "project_id": st.secrets["gmail_service_account"]["project_id"],
+    "private_key_id": st.secrets["gmail_service_account"]["private_key_id"],
+    "private_key": st.secrets["gmail_service_account"]["private_key"],
+    "client_email": st.secrets["gmail_service_account"]["client_email"],
+    "client_id": st.secrets["gmail_service_account"]["client_id"],
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
     "token_uri": "https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": st.secrets["client_x509_cert_url"]}   
+    "client_x509_cert_url": st.secrets["gmail_service_account"]["client_x509_cert_url"]}   
     
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(input_dict, scope)
     return credentials
@@ -31,22 +31,37 @@ def setup_pydrive():
     drive = GoogleDrive(gauth)
     return drive
 
-
-def get_lecture_data(username,lecture):
+def download_pdf(username,lecture):
     drive = setup_pydrive()
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
+    id = db.query("SELECT pdf_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0][0]
+    if not os.path.isdir(f"tmp/{lecture}"):
+        os.makedirs(f"tmp/{lecture}")
+    elif os.path.isfile(f"tmp/{lecture}/{lecture}.pdf"):
+        return True
+    else:
+        pass
+    file = drive.CreateFile({'id': id})
+    file.GetContentFile(f"tmp/{lecture}/{lecture}.pdf")
+
+
+def download_faiss_data(username,lecture):
+    drive = setup_pydrive()
+    db = Database()
     ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
     if not os.path.isdir(f"tmp/{lecture}"):
         #os.makedirs(f"tmp/{lecture}")
-        os.makedirs(f"tmp/{lecture}/embeddings")
-    else:
+        os.makedirs(f"tmp/{lecture}")
+    elif os.path.isfile("index.faiss"):
         return True
+    else:
+        pass
     for id, file_kind in zip(ids, ["faiss","pkl"]):
         file = drive.CreateFile({'id': id})
         # if file_kind == "pdf":
         #     file.GetContentFile("tmp/pdf.pdf")
         # else:
-        file.GetContentFile(f"tmp/{lecture}/embeddings/index.{file_kind}")
+        file.GetContentFile(f"tmp/{lecture}/index.{file_kind}")
     return True
 
 def create_folder(foldername, parent_folder_id=None, permissions = False):
@@ -69,7 +84,7 @@ def create_folder(foldername, parent_folder_id=None, permissions = False):
     folder = drive.CreateFile(file_metadata_root)
     folder.Upload()
     if permissions:
-        folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
+        folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]["gmail_email"]})
     return folder["id"], False
 
 def upload_file_to_google(file_path,parent_folder_id, file_name):
@@ -99,7 +114,7 @@ def upload_lecture_to_drive(username, lecture):
                             parent_folder_id=lecture_folder_id,
                             file_name="index.pkl")
 
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     if lecture_existed:
         db.update_filestorage("UPDATE filestorage SET pdf_id = %s, index_faiss_id = %s, index_pkl_id= %s WHERE username = %s AND lecture = %s""",(pdf_id, index_faiss_id, index_pkl_id,username,lecture))
     else:
@@ -121,3 +136,24 @@ def reset_drive():
     for file in tqdm(file_list):
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
+        
+def reset_database(tables=None):
+    cnx =  mysql.connector.connect(host="localhost",
+                                user=st.secrets["mysql_user"],
+                                password=st.secrets["mysql_password"],
+                                database=st.secrets['mysql_dbName']
+                                )
+    if tables == None:
+        tables = [
+        "users",
+        "history",
+        "filestorage"]
+    with cnx.cursor() as cursor:
+
+        for table in tables:
+            cursor.execute(f"DELETE FROM {table}")
+            cnx.commit()
+
+def delete_all(tables):
+    reset_database(tables)
+    reset_drive()

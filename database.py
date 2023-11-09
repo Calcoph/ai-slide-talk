@@ -3,15 +3,15 @@ import streamlit as st
 import sys
 
 class Database:
-    def __init__(self, database):
+    def __init__(self):
         self.mydb = mysql.connector.connect(
-            host=st.secrets["mysql_host"],
+            host=st.secrets["my_sql"]["mysql_host"],
             #port=st.secrets["mysql_port"],
-            user=st.secrets["mysql_user"],
-            password=st.secrets["mysql_password"]
+            user=st.secrets["my_sql"]["mysql_user"],
+            password=st.secrets["my_sql"]["mysql_password"]
         )
-        self.__checkDatabaseExists(database)
-        self.mydb.database = database #st.secrets["mysql_dbName"]
+        self.__checkDatabaseExists(st.secrets["my_sql"]["mysql_dbName"])
+        self.mydb.database = st.secrets["my_sql"]["mysql_dbName"] #st.secrets["mysql_dbName"]
     
     def query(self, sql_query,data=None):
         cursor = self.mydb.cursor()
@@ -73,8 +73,8 @@ class Database:
     
     def create_database(self):
         cnx =  mysql.connector.connect(host="localhost",
-                                    user=st.secrets["mysql_user"],
-                                password=st.secrets["mysql_password"])
+                                    user=st.secrets["my_sql"]["mysql_user"],
+                                password=st.secrets["my_sql"]["mysql_password"])
         create_db_query = f"CREATE DATABASE {st.secrets['mysql_dbName']}"
         with cnx.cursor() as cursor:
             try:
@@ -111,7 +111,7 @@ class Database:
             index_pkl_id VARCHAR(255) NOT NULL
         )
         """
-        mydb = Database(st.secrets["mysql_dbName"])
+        mydb = Database()
         mydb.query(create_history_table_query)
         mydb.query(create_users_table_query)
         mydb.query(create_filestorage_table_query)

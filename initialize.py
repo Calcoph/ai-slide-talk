@@ -21,7 +21,7 @@ def init_lecture():
     st.session_state["lecture"] = st.session_state["lecture_list"][0]
 
 def load_lecturenames():
-    db = Database(st.secrets["mysql_dbName"])
+    db = Database()
     uploaded_lectures = db.query("SELECT lecture from filestorage WHERE username = %s",
                                                     (st.session_state["username"],))
     uploaded_lectures = set([x[0] for x in uploaded_lectures])
@@ -79,7 +79,7 @@ def initialize_session_state():
 def setup_qa(lecture, language):
 
     embeddings = OpenAIEmbeddings()
-    vectorstore = FAISS.load_local(f"tmp/{lecture}/embeddings",embeddings=embeddings)
+    vectorstore = FAISS.load_local(f"tmp/{lecture}",embeddings=embeddings)
     
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
