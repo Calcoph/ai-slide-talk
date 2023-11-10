@@ -4,15 +4,17 @@ from initialize import streamlit_setup_qa
 from gdrive_helpers import download_faiss_data
 
 def render_chat_layout():
+    """Chat UI"""
+
     ## main page
     if (st.session_state["lecture"] and st.session_state["language"]) == False:
         st.success("⬅️ Select a language and a lecture on the side.")
-        st.stop()    
+        st.stop()
 
     for msg in st.session_state.messages:
         st.chat_message(msg["role"]).write(msg["content"])
     st.chat_message("assistant").write(f"You are chatting with the **{st.session_state['lecture']}** slides in **{st.session_state['language']}**. How can I help you?")
-    
+
     if prompt := st.chat_input():
         #add user message to session_state messages
         st.session_state.messages.append({"role": "user", "content": prompt})
@@ -35,13 +37,15 @@ def render_chat_layout():
             save_history(message_info)
 
 def render_lecture_selector():
+    """Lecture selector UI"""
+
     with st.sidebar:
         with st.expander("Select a Lecture & Language"):
             with st.form("lecture_change"):
                 lecture = st.selectbox("Select the lecture you want to chat with.", options=st.session_state["lecture_list"])
                 language = st.radio("Choose language of Answer", options=["English","Spanish","German"], horizontal=True)
                 lecture_change = st.form_submit_button("Change lecture & language")
-        
+
         if lecture_change:
             st.session_state["lecture"] = lecture
             st.session_state["language"] = language
@@ -50,4 +54,3 @@ def render_lecture_selector():
             with st.spinner("Downloading Data."):
                 download_faiss_data(st.session_state["username"],st.session_state["lecture"])
                 st.session_state["qa"] = streamlit_setup_qa()
-
