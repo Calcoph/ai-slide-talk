@@ -7,6 +7,8 @@ import os
 from tqdm import tqdm
 import mysql
 
+from dictclasses import StoredFileData
+
 def google_auth() -> ServiceAccountCredentials:
     scope = ["https://www.googleapis.com/auth/drive"]
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gmail_service_account"], scope)
@@ -90,14 +92,6 @@ def upload_file_to_google(file_path: str, parent_folder_id: str, file_name: str)
     file1.Upload()
     # file1.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
     return file1['id']
-
-class StoredFileData:
-    def __init__(self, username: str, lecture: str, pdf_id: str, index_faiss_id: str, index_pkl_id: str) -> None:
-        self.username = username
-        self.lecture = lecture
-        self.pdf_id = pdf_id
-        self.index_faiss_id = index_faiss_id
-        self.index_pkl_id = index_pkl_id
 
 def upload_lecture_to_drive(username: str, lecture: str):
     root_folder_id, root_existed = create_folder(st.secrets["my_sql"]["mysql_dbName"],permissions=True)

@@ -1,8 +1,9 @@
-from chat_helpers import FullMessage
 from database import Database
 import pandas as pd
 import streamlit as st
 import os
+
+from dictclasses import FullMessage
 
 # @st.cache_data
 def load_history():

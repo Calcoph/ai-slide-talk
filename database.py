@@ -3,11 +3,8 @@ from mysql.connector import MySQLConnection
 import streamlit as st
 import sys
 
-from auth_helpers import UserRegister
-from chat_helpers import FullMessage
 from typing import Any
-
-from gdrive_helpers import StoredFileData
+from dictclasses import FullMessage, StoredFileData, UserRegister
 
 class Database:
     """

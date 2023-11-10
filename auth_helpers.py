@@ -4,18 +4,11 @@ import pandas as pd
 import os, string, random, smtplib
 import bcrypt
 from cryptography.fernet import Fernet
+from dictclasses import UserRegister
 from history_helpers import load_history
 from database import Database
-from typing import TypeVar
 import shutil
 import stat
-
-class UserRegister:
-    def __init__(self, email: str, username: str, password: bytes, open_api_key: bytes) -> None:
-        self.email = email
-        self.username = username
-        self.password = password
-        self.open_api_key = open_api_key
 
 def render_login_register():
     """Show the login and register forms"""
@@ -53,7 +46,8 @@ def render_login_register():
             username = st.text_input("Username")
             apikey = st.text_input("OPENAI-API KEY",type="password")
             password = st.text_input("Password",type="password")
-        if st.form_submit_button("Register"):
+            register = st.form_submit_button("Register")
+        if register:
             salt = bcrypt.gensalt()
             email = email.lower()
             password = bcrypt.hashpw(password=password.encode(),salt=salt)

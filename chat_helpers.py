@@ -1,24 +1,8 @@
 import streamlit as st
+from dictclasses import FullMessage
 from history_helpers import load_chat_history,save_history
 from initialize import streamlit_setup_qa
 from gdrive_helpers import download_faiss_data
-
-class FullMessage:
-    def __init__(self, prompt: str, message: str, username: str, lecture: str, language: str) -> None:
-        self.prompt = prompt
-        self.message = message
-        self.username = username
-        self.lecture = lecture
-        self.language = language
-
-    def to_dict(self) -> dict[str, str]:
-        {
-            "prompt": self.prompt,
-            "message": self.message,
-            "username": self.username,
-            "lecture": self.lecture,
-            "language": self.language
-        }
 
 def render_chat_layout():
     """Chat UI"""
