@@ -3,6 +3,23 @@ from history_helpers import load_chat_history,save_history
 from initialize import streamlit_setup_qa
 from gdrive_helpers import download_faiss_data
 
+class FullMessage:
+    def __init__(self, prompt: str, message: str, username: str, lecture: str, language: str) -> None:
+        self.prompt = prompt
+        self.message = message
+        self.username = username
+        self.lecture = lecture
+        self.language = language
+
+    def to_dict(self) -> dict[str, str]:
+        {
+            "prompt": self.prompt,
+            "message": self.message,
+            "username": self.username,
+            "lecture": self.lecture,
+            "language": self.language
+        }
+
 def render_chat_layout():
     """Chat UI"""
 
@@ -29,11 +46,14 @@ def render_chat_layout():
             #write in chat
             st.chat_message("assistant").write(msg["content"])
 
-            message_info = {"prompt":prompt,"message":msg["content"],
-                                    "username":st.session_state["username"],
-                                    "lecture": st.session_state["lecture"],
-                                    "language":st.session_state["language"],
-                                    }
+            message_info = FullMessage(
+                prompt,
+                msg["content"],
+                st.session_state["username"],
+                st.session_state["lecture"],
+                st.session_state["language"]
+            )
+
             save_history(message_info)
 
 def render_lecture_selector():

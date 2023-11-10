@@ -74,15 +74,23 @@ def create_folder(foldername, parent_folder_id=None, permissions = False):
         folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]["gmail_email"]})
     return folder["id"], False
 
-def upload_file_to_google(file_path,parent_folder_id, file_name):
+def upload_file_to_google(file_path,parent_folder_id, file_name) -> str:
     drive = setup_pydrive()
-    
+
     file1 = drive.CreateFile({'title': file_name,
                               'parents': [{"id": parent_folder_id}]})
     file1.SetContentFile(file_path)
     file1.Upload()
     # file1.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]})
     return file1['id']
+
+class StoredFileData:
+    def __init__(self, username: str, lecture: str, pdf_id: str, index_faiss_id: str, index_pkl_id: str) -> None:
+        self.username = username
+        self.lecture = lecture
+        self.pdf_id = pdf_id
+        self.index_faiss_id = index_faiss_id
+        self.index_pkl_id = index_pkl_id
 
 def upload_lecture_to_drive(username, lecture):
     root_folder_id, root_existed = create_folder(st.secrets["my_sql"]["mysql_dbName"],permissions=True)
@@ -103,9 +111,14 @@ def upload_lecture_to_drive(username, lecture):
 
     db = Database()
     if lecture_existed:
-        db.update_filestorage("UPDATE filestorage SET pdf_id = %s, index_faiss_id = %s, index_pkl_id= %s WHERE username = %s AND lecture = %s""",(pdf_id, index_faiss_id, index_pkl_id,username,lecture))
+        db.execute_query(
+            """UPDATE filestorage
+            SET pdf_id = %s, index_faiss_id = %s, index_pkl_id= %s
+            WHERE username = %s AND lecture = %s
+            """,
+            (pdf_id, index_faiss_id, index_pkl_id,username,lecture))
     else:
-        db.add_filestorage((username,lecture,pdf_id, index_faiss_id, index_pkl_id))
+        db.add_filestorage(StoredFileData(username, lecture, pdf_id, index_faiss_id, index_pkl_id))
 
     return True
 
@@ -116,14 +129,14 @@ def delete_from_folder(folder_id):
     for file in files:
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
-        
+
 def reset_drive():
     drive = setup_pydrive()
     file_list = drive.ListFile({'q': "trashed=false"}).GetList()
     for file in tqdm(file_list):
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
-        
+
 def reset_database(tables=None):
     cnx =  mysql.connector.connect(host="localhost",
                                 user=st.secrets["my_sql"]["mysql_user"],

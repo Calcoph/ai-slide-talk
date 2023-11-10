@@ -1,3 +1,4 @@
+from chat_helpers import FullMessage
 from database import Database
 import pandas as pd
 import streamlit as st
@@ -22,7 +23,13 @@ def load_chat_history(lecture,newest_k=5):
             st.session_state.messages.append({"role":"assistant","content":msg["message"]})
             st.session_state.history.append((msg["prompt"],msg["message"]))
 
-def save_history(message_info):
+def save_history(message_info: FullMessage):
     db = Database()
     db.add_history(message_info)
-    st.session_state["userhistory"] = pd.concat([st.session_state["userhistory"],pd.DataFrame(message_info, index=[0])]).reset_index(drop=True)   
+    st.session_state["userhistory"] = pd.concat(
+        [st.session_state["userhistory"],
+         pd.DataFrame(
+              message_info.to_dict(),
+              index=[0]
+        )]
+    ).reset_index(drop=True)

@@ -83,7 +83,6 @@ def check_api_key(key: str) -> bool:
         #st.write(e)
         return False
 
-T = TypeVar("T")
 def create_new_user(userinfo: UserRegister, check_key=True):
     """Validates `userinfo` and adds a new user to the database
 
@@ -216,7 +215,10 @@ def send_new_password(email: str) -> bool:
     if send_email(recipient=recipient, generated_pw=new_pw):
         salt = bcrypt.gensalt()
         new_pw_enctrypted = bcrypt.hashpw(password=new_pw.encode(),salt=salt)
-        db.update_user("""UPDATE users SET password = %s WHERE email = %s""",(new_pw_enctrypted,email))
+        db.execute_query(
+            """UPDATE users SET password = %s WHERE email = %s""",
+            (new_pw_enctrypted, email)
+        )
         st.success("Succesfully send new password.")
         return True
     else:
@@ -244,7 +246,10 @@ def change_password(change_info: PasswordChangeData):
     if bcrypt.checkpw(change_info.old_pw.encode(),user_pw.encode()):
         salt = bcrypt.gensalt()
         new_pw_encrypted = bcrypt.hashpw(password=change_info.new_pw.encode(),salt=salt)
-        db.update_user("""UPDATE users SET password = %s WHERE username = %s""",(new_pw_encrypted,st.session_state["username"]))
+        db.execute_query(
+            """UPDATE users SET password = %s WHERE username = %s""",
+            (new_pw_encrypted,st.session_state["username"])
+        )
         st.success("Password changed succesfully.")
     else:
         st.warning("Old Password not correct.")
@@ -266,7 +271,10 @@ def change_openai_apikey(change_info: APIKeyChangeData):
     user_pw = db.query("SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if bcrypt.checkpw(change_info.password.encode(),user_pw.encode()):
         if check_api_key(change_info.new_api_key):
-            db.update_user("UPDATE users SET openai_api_key = %s WHERE username = %s",(encrypt_api_key(change_info["newapikey"]),st.session_state["username"]))
+            db.execute_query(
+                "UPDATE users SET openai_api_key = %s WHERE username = %s",
+                (encrypt_api_key(change_info["newapikey"]), st.session_state["username"])
+            )
             st.success("OPENAI API KEY changed successfully.")
             os.environ["OPENAI_API_KEY"] = change_info.new_api_key
         else:
