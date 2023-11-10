@@ -10,6 +10,13 @@ from typing import TypeVar
 import shutil
 import stat
 
+class UserRegister:
+    def __init__(self, email: str, username: str, password: bytes, open_api_key: bytes) -> None:
+        self.email = email
+        self.username = username
+        self.password = password
+        self.open_api_key = open_api_key
+
 def render_login_register():
     """Show the login and register forms"""
     ##
@@ -46,16 +53,14 @@ def render_login_register():
             username = st.text_input("Username")
             apikey = st.text_input("OPENAI-API KEY",type="password")
             password = st.text_input("Password",type="password")
-            register = st.form_submit_button("Register")
-        if register:
+        if st.form_submit_button("Register"):
             salt = bcrypt.gensalt()
-            userinfo = {"email": email.lower(),
-                        "username":username,
-                        "password": bcrypt.hashpw(password=password.encode(),salt=salt),
-                        "OPENAI_API_KEY": encrypt_api_key(apikey)
-                        }
+            email = email.lower()
+            password = bcrypt.hashpw(password=password.encode(),salt=salt)
+            open_api_key = encrypt_api_key(apikey)
+            userinfo = UserRegister(email, username, password, open_api_key)
             with st.spinner("Registering User"):
-                create_new_user(userinfo=userinfo,check_key=False)
+                create_new_user(userinfo, check_key=False)
 
 #@st.cache_data()
 def load_userdb() -> pd.DataFrame :
@@ -79,24 +84,24 @@ def check_api_key(key: str) -> bool:
         return False
 
 T = TypeVar("T")
-def create_new_user(userinfo: dict[str, T], check_key=True):
+def create_new_user(userinfo: UserRegister, check_key=True):
     """Validates `userinfo` and adds a new user to the database
 
     Args:
-        userinfo (dict[str, T]): Must have values: `"OPENAI_API_KEY"`, `"username"`, `"email"`
+        userinfo (UserRegister)
         check_key (bool, optional): whether to check if the api key is valid. Defaults to True.
     """
 
     db = Database()
     #check if api key is valid, can be disabled for development purposes, set "check_key" to False
-    if not check_api_key(decrypt_api_key(userinfo["OPENAI_API_KEY"])) and check_key:
+    if not check_api_key(decrypt_api_key(userinfo.open_api_key)) and check_key:
         st.error("Your OPENAI API-KEY is wrong. Check again.")
         st.stop()
     # ensure username to be unique
-    if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo["username"],))) != 0:
+    if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo.username,))) != 0:
         st.error("Username already taken. Choose another one.")
         st.stop()
-    if len(db.query("SELECT * FROM users WHERE email = %s",(userinfo["email"],))) != 0:
+    if len(db.query("SELECT * FROM users WHERE email = %s",(userinfo.email,))) != 0:
         st.error("Email already taken. Reset your password in the 'Login' tab.")
         st.stop()
     #add user to database
@@ -147,11 +152,16 @@ def encrypt_api_key(raw_api_key: str) -> bytes:
     fernet = Fernet(encryption_key)
     return fernet.encrypt(raw_api_key.encode())
 
-def send_email(recipient: dict[str, T], generated_pw: str) -> bool:
+class EmailReceiver:
+    def __init__(self, email, username) -> None:
+        self.email = email
+        self.username = username
+
+def send_email(recipient: EmailReceiver, generated_pw: str) -> bool:
     """Sends the password recovery email
 
     Args:
-        recipient (dict[str, T]): email receiver. Must contain `"email"` and `"username"`
+        recipient (EmailReceiver)
 
     Returns:
         bool: True if the email was sent, False otherwise
@@ -161,11 +171,11 @@ def send_email(recipient: dict[str, T], generated_pw: str) -> bool:
         subject = "Your new Slidechatter Password"
         text = f"""
 
-        Hey {recipient["username"]},
+        Hey {recipient.username},
 
         here is your new slidechatter password, make sure to change it after login in:
 
-        Username: {recipient["username"]}
+        Username: {recipient.username}
         New Password: {generated_pw}
 
         Regards,
@@ -174,7 +184,7 @@ def send_email(recipient: dict[str, T], generated_pw: str) -> bool:
         message = 'Subject: {}\n{}'.format(subject, text)
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
             smtp_server.login(st.secrets["gmail"]["gmail_email"], st.secrets["gmail"]["gmail_pw"])
-            smtp_server.sendmail(st.secrets["gmail"]["gmail_email"], recipient["email"], message)
+            smtp_server.sendmail(st.secrets["gmail"]["gmail_email"], recipient.email, message)
         return True
     except:
         return None
@@ -200,8 +210,7 @@ def send_new_password(email: str) -> bool:
         st.error("E-Mail not correct.")
         st.stop()
 
-    recipient = {"email":userinfo[1],
-                "username":userinfo[2]}
+    recipient = EmailReceiver(userinfo[1], userinfo[2])
 
     new_pw = generate_random_pw()
     if send_email(recipient=recipient, generated_pw=new_pw):
@@ -214,41 +223,52 @@ def send_new_password(email: str) -> bool:
         print("Error sending new password.")
         return None
 
-def change_password(change_info: dict[str, T]):
+class PasswordChangeData:
+    def __init__(self, old_pw: str, new_pw: str, new_pw_repeat: str) -> None:
+        self.old_pw = old_pw
+        self.new_pw = new_pw
+        self.new_pw_repeat = new_pw_repeat
+
+def change_password(change_info: PasswordChangeData):
     """Changes the password
 
     Args:
-        change_info (dict[str, T]): must contain `"newpw1"`, `"newpw2"`, `"oldpw"`
+        change_info (PasswordChangeData)
     """
 
     db = Database()
     user_pw = db.query(f"SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
-    if change_info["newpw1"] != change_info["newpw2"]:
+    if change_info.new_pw != change_info.new_pw_repeat:
         st.warning("New passwords are not equal.")
         st.stop()
-    if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
+    if bcrypt.checkpw(change_info.old_pw.encode(),user_pw.encode()):
         salt = bcrypt.gensalt()
-        new_pw_encrypted = bcrypt.hashpw(password=change_info["newpw2"].encode(),salt=salt)
+        new_pw_encrypted = bcrypt.hashpw(password=change_info.new_pw.encode(),salt=salt)
         db.update_user("""UPDATE users SET password = %s WHERE username = %s""",(new_pw_encrypted,st.session_state["username"]))
         st.success("Password changed succesfully.")
     else:
         st.warning("Old Password not correct.")
 
 
-def change_openai_apikey(change_info: dict[str, T]):
+class APIKeyChangeData:
+    def __init__(self, password: str, new_api_key: str) -> None:
+        self.password = password
+        self.new_api_key = new_api_key
+
+def change_openai_apikey(change_info: APIKeyChangeData):
     """Changes the openai key
 
     Args:
-        change_info (dict[str, T]): must contain keys `"oldpw"`, `"newapikey"`,
+        change_info (APIKeyChangeData)
     """
 
     db = Database()
     user_pw = db.query("SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
-    if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
-        if check_api_key(change_info["newapikey"]):
+    if bcrypt.checkpw(change_info.password.encode(),user_pw.encode()):
+        if check_api_key(change_info.new_api_key):
             db.update_user("UPDATE users SET openai_api_key = %s WHERE username = %s",(encrypt_api_key(change_info["newapikey"]),st.session_state["username"]))
             st.success("OPENAI API KEY changed successfully.")
-            os.environ["OPENAI_API_KEY"] = change_info["newapikey"]
+            os.environ["OPENAI_API_KEY"] = change_info.new_api_key
         else:
             st.warning("New OPENAI API KEY is wrong.")
     else:
