@@ -11,11 +11,12 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 import streamlit as st
-
+from cryptography.fernet import Fernet
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 import os
 from database import *
+import toml,json
 
 def init_lecture():
     st.session_state["lecture"] = st.session_state["lecture_list"][0]
@@ -132,3 +133,35 @@ def setup_explainer_bot(language):
             #verbose=True,
         )
     return conversation
+
+def check_secrets_file():
+    return os.path.isfile(".streamlit/secrets.toml")
+
+def write_secrets_file(secrets_dict):
+    secrets_dict['encryption_key'] = Fernet.generate_key().decode()
+    if not os.path.isdir(".streamlit"):
+        os.mkdir(".streamlit")
+    if not os.path.isfile(".streamlit/secrets.toml"):
+        with open(".streamlit/secrets.toml","w") as fp:
+            toml.dump(secrets_dict, fp)
+    st.rerun()
+    
+def render_secrets_creator():
+
+        with open("secrets_template.json", "r") as fp:
+            secrets_template = json.load(fp)
+        del secrets_template["encryption_key"]
+        st.title("Initial Setup")
+        st.write("""Either fill out all necessary secrets here or create a secrets.toml file from the
+                'secrets_template.json' in the root folder. Save it in a folder called '.streamlit'""")
+        with st.form("secrets_writer"):
+            for key in secrets_template:
+                st.write(f"**{key}**")
+                for input in secrets_template[key]:
+                    secrets_template[key][input] = st.text_input(input)
+
+            submit_secrets = st.form_submit_button()
+        if submit_secrets:
+            st.write(secrets_template)
+            write_secrets_file(secrets_template)
+        st.stop()
