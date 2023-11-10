@@ -157,11 +157,15 @@ def render_secrets_creator():
         with st.form("secrets_writer"):
             for key in secrets_template:
                 st.write(f"**{key}**")
-                for input in secrets_template[key]:
-                    secrets_template[key][input] = st.text_input(input)
-
+                if key != "gmail_service_account":
+                    for input in secrets_template[key]:
+                        secrets_template[key][input] = st.text_input(input)
+                else:
+                    st.write(""" To obtain a clients secrets json for a Google Service Account
+                             follow this tutorial **until STEP 3**: https://www.labnol.org/google-api-service-account-220404 """)
+                    json_file = st.file_uploader("client secrets",type="json")
             submit_secrets = st.form_submit_button()
         if submit_secrets:
-            st.write(secrets_template)
+            secrets_template["gmail_service_account"] = (json.load(json_file))
             write_secrets_file(secrets_template)
         st.stop()
