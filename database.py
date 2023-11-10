@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector import MySQLConnection
 import streamlit as st
 import sys
 
@@ -19,7 +20,7 @@ print(databases)
 """
 
     def __init__(self):
-        self.mydb = mysql.connector.connect(
+        self.mydb: MySQLConnection = mysql.connector.connect(
             host=st.secrets["my_sql"]["mysql_host"],
             #port=st.secrets["mysql_port"],
             user=st.secrets["my_sql"]["mysql_user"],
