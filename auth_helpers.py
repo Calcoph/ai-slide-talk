@@ -6,19 +6,21 @@ import bcrypt
 from cryptography.fernet import Fernet
 from history_helpers import load_history
 from database import Database
+from typing import TypeVar
 import shutil
 import stat
 
 def render_login_register():
+    """Show the login and register forms"""
     ##
 
     ## LOGIN
     ##
     login_tab, register_tab = st.tabs(["**Login**", "**Register**"])
     with login_tab:
-        with st.form("login", clear_on_submit=False): 
+        with st.form("login", clear_on_submit=False):
             username = st.text_input("Username")
-            password = st.text_input("Password",type="password")  
+            password = st.text_input("Password",type="password")
             login = st.form_submit_button("Login")
         if login:
             login_user(username=username,password=password)
@@ -35,9 +37,9 @@ def render_login_register():
                     send_new_password(email)
     ##
     ## REGISTER
-    ##    
+    ##
     with register_tab:
-        with st.form("register", clear_on_submit=False):   
+        with st.form("register", clear_on_submit=False):
             st.subheader("Register")
             email = st.text_input("E-Mail")
             st.warning("Double check your E-Mail-Address, it is the only way to restore your account.")
@@ -53,18 +55,20 @@ def render_login_register():
                         "OPENAI_API_KEY": encrypt_api_key(apikey)
                         }
             with st.spinner("Registering User"):
-                create_new_user(userinfo=userinfo,check_key=False)    
+                create_new_user(userinfo=userinfo,check_key=False)
 
 #@st.cache_data()
-def load_userdb():
+def load_userdb() -> pd.DataFrame :
     mydb = Database()
     userdb = mydb.query("SELECT * FROM users")
     return pd.DataFrame(userdb,
                         columns=["id","email","username","password","OPENAI_API_KEY"])
 
-def check_api_key(key):
+def check_api_key(key: str) -> bool:
+    """Checks if the key is a valid openai key"""
+
     try:
-        openai.api_key = key 
+        openai.api_key = key
         openai.Completion.create(
         prompt="Test",
         model = "davinci",
@@ -74,12 +78,20 @@ def check_api_key(key):
         #st.write(e)
         return False
 
-def create_new_user(userinfo, check_key=True):
+T = TypeVar("T")
+def create_new_user(userinfo: dict[str, T], check_key=True):
+    """Validates `userinfo` and adds a new user to the database
+
+    Args:
+        userinfo (dict[str, T]): Must have values: `"OPENAI_API_KEY"`, `"username"`, `"email"`
+        check_key (bool, optional): whether to check if the api key is valid. Defaults to True.
+    """
+
     db = Database()
     #check if api key is valid, can be disabled for development purposes, set "check_key" to False
     if not check_api_key(decrypt_api_key(userinfo["OPENAI_API_KEY"])) and check_key:
         st.error("Your OPENAI API-KEY is wrong. Check again.")
-        st.stop()        
+        st.stop()
     # ensure username to be unique
     if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo["username"],))) != 0:
         st.error("Username already taken. Choose another one.")
@@ -92,6 +104,8 @@ def create_new_user(userinfo, check_key=True):
     st.success("You registered succesfully. Login with your credentials.")
 
 def logout_user():
+    """Clean up user user-related variables and {workspace}/tmp directory"""
+
     os.environ["OPENAI_API_KEY"] = ""
     reset_list = ["authentication_status","lecture","language"]
     for item in reset_list:
@@ -102,13 +116,18 @@ def logout_user():
         delete_empty_folder("tmp")
     st.rerun()
 
-def login_user(username,password):
+def login_user(username: str, password: str):
+    """Checks if username and password are correct.
+
+    If they are, log in.
+    """
+
     db = Database()
     try:
         userinfo = db.query(f"SELECT * FROM users WHERE username = %s",(username,))[0]
     except IndexError:
         st.warning("Username not correct.")
-        return 
+        return
     if bcrypt.checkpw(password.encode(),userinfo[3].encode()):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
@@ -117,26 +136,33 @@ def login_user(username,password):
         st.rerun()
     else:
         st.error("Password is wrong.")
-   
 
-def decrypt_api_key(encrypted_api_key):
+def decrypt_api_key(encrypted_api_key: bytes):
     encryption_key = st.secrets["encryption_key"]
     fernet = Fernet(encryption_key)
     return fernet.decrypt(encrypted_api_key).decode()
 
-def encrypt_api_key(raw_api_key):
+def encrypt_api_key(raw_api_key: str) -> bytes:
     encryption_key = st.secrets["encryption_key"]
     fernet = Fernet(encryption_key)
     return fernet.encrypt(raw_api_key.encode())
 
-def send_email(recipient, generated_pw):
+def send_email(recipient: dict[str, T], generated_pw: str) -> bool:
+    """Sends the password recovery email
+
+    Args:
+        recipient (dict[str, T]): email receiver. Must contain `"email"` and `"username"`
+
+    Returns:
+        bool: True if the email was sent, False otherwise
+    """
     try:
-            
+
         subject = "Your new Slidechatter Password"
         text = f"""
-        
+
         Hey {recipient["username"]},
-        
+
         here is your new slidechatter password, make sure to change it after login in:
 
         Username: {recipient["username"]}
@@ -153,12 +179,20 @@ def send_email(recipient, generated_pw):
     except:
         return None
 
-# function from streamlit authenticator (https://github.com/mkhorasani/Streamlit-Authenticator) 
+# function from streamlit authenticator (https://github.com/mkhorasani/Streamlit-Authenticator)
 def generate_random_pw(length: int=16) -> str:
+    """Generate random alphanumeric password"""
+
     letters = string.ascii_letters + string.digits
     return ''.join(random.choice(letters) for i in range(length)).replace(' ','')
- 
-def send_new_password(email):
+
+def send_new_password(email: str) -> bool:
+    """Send a new password
+
+    Returns:
+        bool: True if it was sent, False if otherwise
+    """
+
     db = Database()
     try:
         userinfo = db.query(f"SELECT * FROM users WHERE email = %s",(email,))[0]
@@ -168,9 +202,9 @@ def send_new_password(email):
 
     recipient = {"email":userinfo[1],
                 "username":userinfo[2]}
-    
+
     new_pw = generate_random_pw()
-    if send_email(recipient=recipient,generated_pw=new_pw):
+    if send_email(recipient=recipient, generated_pw=new_pw):
         salt = bcrypt.gensalt()
         new_pw_enctrypted = bcrypt.hashpw(password=new_pw.encode(),salt=salt)
         db.update_user("""UPDATE users SET password = %s WHERE email = %s""",(new_pw_enctrypted,email))
@@ -179,8 +213,14 @@ def send_new_password(email):
     else:
         print("Error sending new password.")
         return None
-    
-def change_password(change_info):
+
+def change_password(change_info: dict[str, T]):
+    """Changes the password
+
+    Args:
+        change_info (dict[str, T]): must contain `"newpw1"`, `"newpw2"`, `"oldpw"`
+    """
+
     db = Database()
     user_pw = db.query(f"SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if change_info["newpw1"] != change_info["newpw2"]:
@@ -193,9 +233,15 @@ def change_password(change_info):
         st.success("Password changed succesfully.")
     else:
         st.warning("Old Password not correct.")
-    
 
-def change_openai_apikey(change_info):
+
+def change_openai_apikey(change_info: dict[str, T]):
+    """Changes the openai key
+
+    Args:
+        change_info (dict[str, T]): must contain keys `"oldpw"`, `"newapikey"`,
+    """
+
     db = Database()
     user_pw = db.query("SELECT password FROM users WHERE username = %s",(st.session_state["username"],))[0][0]
     if bcrypt.checkpw(change_info["oldpw"].encode(),user_pw.encode()):
@@ -204,11 +250,20 @@ def change_openai_apikey(change_info):
             st.success("OPENAI API KEY changed successfully.")
             os.environ["OPENAI_API_KEY"] = change_info["newapikey"]
         else:
-            st.warning("New OPENAI API KEY is wrong.")            
+            st.warning("New OPENAI API KEY is wrong.")
     else:
         st.warning("Old Password not correct.")
 
-def check_login(render_login_template=False):
+def check_login(render_login_template=False) -> bool:
+    """Check if user is logged in. Can show login form. Adds logout button if loged in.
+
+    Args:
+        render_login_template (bool, optional): whether to show login screen. Defaults to False.
+
+    Returns:
+        bool: True if user is logged in, false otherwise
+    """
+
     if st.session_state["authentication_status"]:
         logout = st.sidebar.button("Logout")
         if logout:
@@ -219,16 +274,16 @@ def check_login(render_login_template=False):
             render_login_register()
         else:
             st.warning("Login on the 'ai_slide_talk' page.")
+        return False
 
 def delete_files(path):
+    """Recursively deletes all files"""
     if os.path.isdir(path):
         dir = os.listdir(path)
         for item in dir:
             delete_files(f"{path}/{item}")
     else:
         os.remove(path)
-    #
-    return
 
 def delete_empty_folder(path):
     def removeReadOnly(func, path, excinfo):
