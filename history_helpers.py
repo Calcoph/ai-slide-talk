@@ -14,7 +14,7 @@ def load_history():
     return pd.DataFrame(user_history,columns=["id","prompt","message","username","lecture","language"])
 
 
-def load_chat_history(lecture,newest_k=5):
+def load_chat_history(lecture: str, newest_k=5):
         st.session_state.messages = []
         st.session_state.history = []
         filtered_history = st.session_state["userhistory"][st.session_state["userhistory"]["lecture"]==lecture]#[:-newest_k]

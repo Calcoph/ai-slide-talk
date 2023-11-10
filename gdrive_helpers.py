@@ -7,18 +7,24 @@ import os
 from tqdm import tqdm
 import mysql
 
-def google_auth():
+def google_auth() -> ServiceAccountCredentials:
     scope = ["https://www.googleapis.com/auth/drive"]
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gmail_service_account"], scope)
     return credentials
 
-def setup_pydrive():
+def setup_pydrive() -> GoogleDrive:
     gauth = GoogleAuth()
     gauth.credentials = google_auth()
     drive = GoogleDrive(gauth)
     return drive
 
-def download_pdf(username,lecture):
+def download_pdf(username: str, lecture: str) -> bool:
+    """Downloads the lecture PDF
+
+    Returns:
+        bool: True if it already exists
+    """
+
     drive = setup_pydrive()
     db = Database()
     id = db.query("SELECT pdf_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0][0]
@@ -31,8 +37,9 @@ def download_pdf(username,lecture):
     file = drive.CreateFile({'id': id})
     file.GetContentFile(f"tmp/{lecture}/{lecture}.pdf")
 
+    return False
 
-def download_faiss_data(username,lecture):
+def download_faiss_data(username: str, lecture: str):
     drive = setup_pydrive()
     db = Database()
     ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
@@ -51,7 +58,7 @@ def download_faiss_data(username,lecture):
         file.GetContentFile(f"tmp/{lecture}/index.{file_kind}")
     return True
 
-def create_folder(foldername, parent_folder_id=None, permissions = False):
+def create_folder(foldername: str, parent_folder_id: str=None, permissions: bool= False) -> (str | list[str], bool):
     drive = setup_pydrive()
     search_term = f"mimeType='application/vnd.google-apps.folder'"
     if parent_folder_id != None:
@@ -74,7 +81,7 @@ def create_folder(foldername, parent_folder_id=None, permissions = False):
         folder.InsertPermission({"type":"user","role":"writer","value":st.secrets["gmail"]["gmail_email"]})
     return folder["id"], False
 
-def upload_file_to_google(file_path,parent_folder_id, file_name) -> str:
+def upload_file_to_google(file_path: str, parent_folder_id: str, file_name: str) -> str:
     drive = setup_pydrive()
 
     file1 = drive.CreateFile({'title': file_name,
@@ -92,7 +99,7 @@ class StoredFileData:
         self.index_faiss_id = index_faiss_id
         self.index_pkl_id = index_pkl_id
 
-def upload_lecture_to_drive(username, lecture):
+def upload_lecture_to_drive(username: str, lecture: str):
     root_folder_id, root_existed = create_folder(st.secrets["my_sql"]["mysql_dbName"],permissions=True)
     user_folder_id, user_folder_existed = create_folder(username, parent_folder_id=root_folder_id)
     lecture_folder_id, lecture_existed = create_folder(lecture, parent_folder_id=user_folder_id)
@@ -123,7 +130,7 @@ def upload_lecture_to_drive(username, lecture):
     return True
 
 
-def delete_from_folder(folder_id):
+def delete_from_folder(folder_id: str):
     drive = setup_pydrive()
     files = drive.ListFile({'q': f"'{folder_id}' in parents"}).GetList()
     for file in files:
@@ -137,7 +144,7 @@ def reset_drive():
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
 
-def reset_database(tables=None):
+def reset_database(tables: list[str]=None):
     cnx =  mysql.connector.connect(host="localhost",
                                 user=st.secrets["my_sql"]["mysql_user"],
                                 password=st.secrets["my_sql"]["mysql_password"],
@@ -154,6 +161,6 @@ def reset_database(tables=None):
             cursor.execute(f"DELETE FROM {table}")
             cnx.commit()
 
-def delete_all(tables):
+def delete_all(tables: list[str]):
     reset_database(tables)
     reset_drive()

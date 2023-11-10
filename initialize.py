@@ -77,11 +77,11 @@ def initialize_session_state():
                 st.session_state[key] = value
 
 @st.cache_resource()
-def setup_qa(lecture, language):
+def setup_qa(lecture: str, language: str):
 
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(f"tmp/{lecture}",embeddings=embeddings)
-    
+
     template = """Use the following pieces of context to answer the users question. \n
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
     \n----------------\n{context}"""
@@ -106,7 +106,7 @@ def setup_qa(lecture, language):
         return qa
 
 @st.cache_resource()
-def setup_explainer_bot(language):
+def setup_explainer_bot(language: str):
     try:
         llm = ChatOpenAI()
     except Exception as e:
@@ -134,7 +134,9 @@ def setup_explainer_bot(language):
         )
     return conversation
 
-def check_secrets_file():
+def check_secrets_file() -> bool:
+    """Check if .streamlit/secrets.toml exists"""
+
     return os.path.isfile(".streamlit/secrets.toml")
 
 def write_secrets_file(secrets_dict):
@@ -145,8 +147,9 @@ def write_secrets_file(secrets_dict):
         with open(".streamlit/secrets.toml","w") as fp:
             toml.dump(secrets_dict, fp)
     st.rerun()
-    
+
 def render_secrets_creator():
+        """Show the form to create a secrets.toml file"""
 
         with open("secrets_template.json", "r") as fp:
             secrets_template = json.load(fp)
