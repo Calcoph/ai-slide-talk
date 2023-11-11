@@ -12,7 +12,7 @@ def load_history():
     #user_history = db.query("SELECT * FROM history WHERE %s",(st.session_state["username"],))
     user_history = db.query("SELECT * FROM history WHERE username = %s",
                             (st.session_state["username"],))
-    return pd.DataFrame(user_history,columns=["id","prompt","message","username","lecture","language"])
+    return pd.DataFrame(user_history,columns=["id","prompt","message","username","lecture","role","language"])
 
 
 def load_chat_history(lecture: str, newest_k=5):
@@ -21,7 +21,7 @@ def load_chat_history(lecture: str, newest_k=5):
         filtered_history = st.session_state["userhistory"][st.session_state["userhistory"]["lecture"]==lecture]#[:-newest_k]
         for msg in filtered_history.to_dict("records"):
             st.session_state.messages.append({"role":"user","content":msg["prompt"]})
-            st.session_state.messages.append({"role":"assistant","content":msg["message"]})
+            st.session_state.messages.append({"role":msg["role"],"content":msg["message"]})
             st.session_state.history.append((msg["prompt"],msg["message"]))
 
 def save_history(message_info: FullMessage):

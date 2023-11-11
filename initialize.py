@@ -65,7 +65,7 @@ defaults = [
     ("lecture", lambda: False),
     ("messages", lambda: []),
     #("qa", streamlit_setup_qa),
-    #("chatbot", streamlit_setup_explainer_bot),
+    ("chatbot", streamlit_setup_explainer_bot),
     #("authentication_status", lambda: False)
 ]
 

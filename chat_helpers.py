@@ -11,9 +11,13 @@ def render_chat_layout():
     if (st.session_state["lecture"] and st.session_state["language"]) == False:
         st.success("⬅️ Select a language and a lecture on the side.")
         st.stop()
-
+    
     for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+        if msg["role"] != "AI Prof":
+            st.chat_message(msg["role"]).write(msg["content"])
+        else:
+            st.chat_message(msg["role"], avatar="👩‍🏫").write(msg["content"])
+
     st.chat_message("assistant").write(f"You are chatting with the **{st.session_state['lecture']}** slides in **{st.session_state['language']}**. How can I help you?")
 
     if prompt := st.chat_input():
@@ -22,23 +26,30 @@ def render_chat_layout():
         #write in chat
         st.chat_message("user").write(prompt)
         with st.spinner("Thinking 🤔"):
-            response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
-            slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
-            msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
-            st.session_state.messages.append(msg)
-            st.session_state.history.append((prompt,response["answer"]))
-            #write in chat
-            st.chat_message("assistant").write(msg["content"])
-
+            if st.session_state["explainer"] == False:       
+                response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
+                slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
+                msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
+                st.session_state.messages.append(msg)
+                st.session_state.history.append((prompt,response["answer"]))
+                #write in chat
+                st.chat_message("assistant").write(msg["content"])
+            else:
+                response = st.session_state["chatbot"]({"question":prompt, "chat_history": st.session_state["history"][-2]})
+                msg = {"role": "AI Prof", "content":response["text"]}
+                st.session_state.messages.append(msg)
+                st.chat_message("AI Prof",avatar="👩‍🏫").write(response["text"])
+            
             message_info = FullMessage(
-                prompt,
-                msg["content"],
-                st.session_state["username"],
-                st.session_state["lecture"],
-                st.session_state["language"]
-            )
-
+                    prompt,
+                    msg["content"],
+                    st.session_state["username"],
+                    st.session_state["lecture"],
+                    msg["role"],
+                    st.session_state["language"],
+                )
             save_history(message_info)
+    st.session_state["explainer"] = st.toggle("👩‍🏫 AI Prof")
 
 def render_lecture_selector():
     """Lecture selector UI"""

@@ -50,8 +50,8 @@ print(databases)
         """Add a message to the history"""
 
         insert_history_query = """
-        INSERT INTO history (prompt, message, username, lecture, language)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO history (prompt, message, username, lecture, role, language)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """
         cursor = self.mydb.cursor()
         cursor.execute(insert_history_query,
@@ -59,6 +59,7 @@ print(databases)
                         history_entry.message,
                         history_entry.username,
                         history_entry.lecture,
+                        history_entry.role,
                         history_entry.language))
         self.mydb.commit()
 
@@ -129,6 +130,7 @@ print(databases)
             message TEXT NOT NULL,
             username VARCHAR(255) NOT NULL,
             lecture VARCHAR(255),
+            role VARCHAR (255),
             language VARCHAR(255)
         )
         """

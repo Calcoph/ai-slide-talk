@@ -1,9 +1,10 @@
 class FullMessage:
-    def __init__(self, prompt: str, message: str, username: str, lecture: str, language: str) -> None:
+    def __init__(self, prompt: str, message: str, username: str, lecture: str, role: str, language: str) -> None:
         self.prompt = prompt
         self.message = message
         self.username = username
         self.lecture = lecture
+        self.role = role
         self.language = language
 
     def to_dict(self) -> dict[str, str]:
