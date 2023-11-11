@@ -1,12 +1,9 @@
 import streamlit as st
 from auth_helpers import check_login
 from chat_helpers import render_chat_layout, render_lecture_selector
-from initialize import initialize_session_state, check_secrets_file, render_secrets_creator
+from initialize import initialize_session_state, check_secrets_file, render_secrets_creator, initialize_session_state_before_login
 
-init_variables = ["authentication_status", "username"]
-for var in init_variables:
-    if var not in st.session_state:
-        st.session_state[var] = None
+initialize_session_state_before_login()
 
 if not check_secrets_file():
     render_secrets_creator()

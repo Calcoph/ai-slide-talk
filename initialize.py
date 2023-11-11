@@ -172,3 +172,9 @@ def render_secrets_creator():
             secrets_template["gmail_service_account"] = (json.load(json_file))
             write_secrets_file(secrets_template)
         st.stop()
+
+def initialize_session_state_before_login():
+    init_variables = ["authentication_status", "username"]
+    for var in init_variables:
+        if var not in st.session_state:
+            st.session_state[var] = None
