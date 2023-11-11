@@ -3,6 +3,8 @@ import pandas as pd
 import streamlit as st
 import os
 
+from dictclasses import FullMessage
+
 # @st.cache_data
 def load_history():
     # REPLACE WITH MYSQL
@@ -13,7 +15,7 @@ def load_history():
     return pd.DataFrame(user_history,columns=["id","prompt","message","username","lecture","language"])
 
 
-def load_chat_history(lecture,newest_k=5):
+def load_chat_history(lecture: str, newest_k=5):
         st.session_state.messages = []
         st.session_state.history = []
         filtered_history = st.session_state["userhistory"][st.session_state["userhistory"]["lecture"]==lecture]#[:-newest_k]
@@ -22,7 +24,13 @@ def load_chat_history(lecture,newest_k=5):
             st.session_state.messages.append({"role":"assistant","content":msg["message"]})
             st.session_state.history.append((msg["prompt"],msg["message"]))
 
-def save_history(message_info):
+def save_history(message_info: FullMessage):
     db = Database()
     db.add_history(message_info)
-    st.session_state["userhistory"] = pd.concat([st.session_state["userhistory"],pd.DataFrame(message_info, index=[0])]).reset_index(drop=True)   
+    st.session_state["userhistory"] = pd.concat(
+        [st.session_state["userhistory"],
+         pd.DataFrame(
+              message_info.to_dict(),
+              index=[0]
+        )]
+    ).reset_index(drop=True)

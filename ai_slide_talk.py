@@ -10,10 +10,9 @@ for var in init_variables:
 
 if not check_secrets_file():
     render_secrets_creator()
-    
+
 st.title("Chat with Lecture Slides 💬")
 if check_login(render_login_template=True):
-    
     initialize_session_state()
     ###
     # CHAT FRONTEND
