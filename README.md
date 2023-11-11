@@ -1,3 +1,14 @@
+# Prerequisite:
+* Google Account with a Google App-Password
+* Client Secrets for a Google Service Account
+
+## Setting Up an App Password in Google Account:
+[Getting an Google App Password](https://support.google.com/accounts/answer/185833?hl=en)
+
+## Getting a Client Secrets JSON for a Google Service Account
+[Generate a clientsecrets-json](https://developers.google.com/workspace/guides/create-credentials#service-account)
+
+# Setting up Project
 To clone this repository:
 ```
 git clone https://github.com/Calcoph/ai-slide-talk.git --recurse-submodules
