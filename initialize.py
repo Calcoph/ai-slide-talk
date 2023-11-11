@@ -156,14 +156,18 @@ def render_secrets_creator():
         del secrets_template["encryption_key"]
         st.title("Initial Setup")
         st.write("""Either fill out all necessary secrets here or create a secrets.toml file from the
-                'secrets_template.json' in the root folder. Save it in a folder called '.streamlit'""")
+                'secrets_template.json' in the root folder. Save it in a folder called '.streamlit'
+                 **More information in the README.**""")
         with st.form("secrets_writer"):
             for key in secrets_template:
                 st.write(f"**{key}**")
                 if key != "gmail_service_account":
                     for input in secrets_template[key]:
-                        secrets_template[key][input] = st.text_input(input)
-                else:
+                        if input == "gmail_pw":
+                            secrets_template[key][input] = st.text_input(input,help="**Not your normal GMAIL Password, but the generated App Password, according to the README.**")
+                        else:
+                            secrets_template[key][input] = st.text_input(input)
+                else:   
                     st.write(""" To obtain a clients secrets json for a Google Service Account
                              follow this tutorial **until STEP 3**: https://www.labnol.org/google-api-service-account-220404 """)
                     json_file = st.file_uploader("client secrets",type="json")
