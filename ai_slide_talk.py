@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 from auth_helpers import check_login
 from chat_helpers import render_chat_layout, render_lecture_selector
