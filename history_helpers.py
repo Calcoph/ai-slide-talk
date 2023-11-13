@@ -7,9 +7,7 @@ from dictclasses import FullMessage
 
 # @st.cache_data
 def load_history():
-    # REPLACE WITH MYSQL
     db = Database()
-    #user_history = db.query("SELECT * FROM history WHERE %s",(st.session_state["username"],))
     user_history = db.query("SELECT * FROM history WHERE username = %s",
                             (st.session_state["username"],))
     return pd.DataFrame(user_history,columns=["id","prompt","message","username","lecture","role","language"])

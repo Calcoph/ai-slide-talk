@@ -39,7 +39,7 @@ def render_login_register():
     ## REGISTER
     ##
     with register_tab:
-        with st.form("register", clear_on_submit=False):
+        with st.form("register", clear_on_submit=True):
             st.subheader("Register")
             email = st.text_input("E-Mail")
             st.warning("Double check your E-Mail-Address, it is the only way to restore your account.")
@@ -109,10 +109,9 @@ def logout_user():
     """Clean up user user-related variables and {workspace}/tmp directory"""
 
     os.environ["OPENAI_API_KEY"] = ""
-    reset_list = ["authentication_status","lecture","language"]
-    for item in reset_list:
-        st.session_state[item] = False
-    st.session_state["username"] = None
+    for k in st.session_state:
+        del st.session_state[k]
+
     if os.path.isdir("tmp"):
         delete_files("tmp")
         delete_empty_folder("tmp")

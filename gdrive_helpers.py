@@ -161,7 +161,7 @@ def delete_database():
 #             cursor.execute(f"DELETE FROM {table}")
 #             cnx.commit()
 
-def delete_all(tables: list[str]):
+def delete_all():
     delete_database()
     reset_drive()
 
