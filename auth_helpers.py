@@ -39,7 +39,7 @@ def render_login_register():
     ## REGISTER
     ##
     with register_tab:
-        with st.form("register", clear_on_submit=True):
+        with st.form("register", clear_on_submit=False):
             st.subheader("Register")
             email = st.text_input("E-Mail")
             st.warning("Double check your E-Mail-Address, it is the only way to restore your account.")
@@ -54,7 +54,7 @@ def render_login_register():
             open_api_key = encrypt_api_key(apikey)
             userinfo = UserRegister(email, username, password, open_api_key)
             with st.spinner("Registering User"):
-                create_new_user(userinfo, check_key=False)
+                create_new_user(userinfo, check_key=True)
 
 def check_api_key(key: str) -> bool:
     """Checks if the key is a valid openai key"""
@@ -81,7 +81,7 @@ def create_new_user(userinfo: UserRegister, check_key=True):
     db = Database()
     #check if api key is valid, can be disabled for development purposes, set "check_key" to False
     if not check_api_key(decrypt_api_key(userinfo.open_api_key)) and check_key:
-        st.error("Your OPENAI API-KEY is wrong. Check again.")
+        st.error("Your OPENAI API-KEY is faulty. Try again or use a different Key.")
         st.stop()
     # ensure username to be unique
     if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo.username,))) != 0:
