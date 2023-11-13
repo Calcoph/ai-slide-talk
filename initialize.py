@@ -25,7 +25,6 @@ def load_lecturenames():
     db = Database()
     uploaded_lectures = db.query("SELECT lecture from filestorage WHERE username = %s",
                                                     (st.session_state["username"],))
-    st.write(st.session_state["username"])
     uploaded_lectures = set([x[0] for x in uploaded_lectures])
 
     if not uploaded_lectures:
