@@ -1,9 +1,12 @@
 import os
-from langchain.document_loaders import PyPDFLoader,PDFPlumberLoader
+import streamlit as st
+from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-
+from gdrive_helpers import delete_lecture_from_drive
+from database import Database
+from initialize import load_lecturenames
 def create_faiss_store(pdf_path):
     loader = PyPDFLoader(pdf_path)
     pages = loader.load_and_split()
@@ -27,3 +30,13 @@ def save_uploadedfile(uploadedfile,lecturename):
     with open(os.path.join(upload_path,f"{lecturename}.pdf"),"wb") as f:
         f.write(uploadedfile.getbuffer())
     return None
+
+def delete_lecture(lecturename):
+    delete_lecture_from_drive(lecturename)
+    db = Database()
+    db.execute_query("DELETE FROM filestorage WHERE username = %s AND lecture = %s",(st.session_state["username"],
+                                                                                     lecturename))
+    db.execute_query("DELETE FROM history WHERE username = %s AND lecture = %s",(st.session_state["username"],
+                                                                                     lecturename))
+    load_lecturenames()
+    st.rerun()

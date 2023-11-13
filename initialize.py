@@ -29,6 +29,7 @@ def load_lecturenames():
 
     if not uploaded_lectures:
         st.error("**No Lecture uploaded. Go to the 'Upload Lecture' Tab on the side**")
+        st.session_state["lecture_list"] = []
         st.stop()
     st.session_state["lecture_list"] = uploaded_lectures
 

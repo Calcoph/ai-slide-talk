@@ -138,23 +138,38 @@ def reset_drive():
         file1 = drive.CreateFile({'id': file["id"]})
         file1.Delete()
 
-def reset_database(tables: list[str]=None):
+def delete_database():
     cnx =  mysql.connector.connect(host="localhost",
-                                user=st.secrets["my_sql"]["mysql_user"],
-                                password=st.secrets["my_sql"]["mysql_password"],
-                                database=st.secrets["my_sql"]['mysql_dbName']
-                                )
-    if tables == None:
-        tables = [
-        "users",
-        "history",
-        "filestorage"]
-    with cnx.cursor() as cursor:
+                                    user=st.secrets["my_sql"]["mysql_user"],
+                                password=st.secrets["my_sql"]["mysql_password"])
+    cnx.cursor().execute(f"DROP DATABASE {st.secrets['my_sql']['mysql_dbName']}")
 
-        for table in tables:
-            cursor.execute(f"DELETE FROM {table}")
-            cnx.commit()
+# def reset_database(tables: list[str]=None):
+#     cnx =  mysql.connector.connect(host="localhost",
+#                                 user=st.secrets["my_sql"]["mysql_user"],
+#                                 password=st.secrets["my_sql"]["mysql_password"],
+#                                 database=st.secrets["my_sql"]['mysql_dbName']
+#                                 )
+#     if tables == None:
+#         tables = [
+#         "users",
+#         "history",
+#         "filestorage"]
+#     with cnx.cursor() as cursor:
+
+#         for table in tables:
+#             cursor.execute(f"DELETE FROM {table}")
+#             cnx.commit()
 
 def delete_all(tables: list[str]):
-    reset_database(tables)
+    delete_database()
     reset_drive()
+
+def delete_lecture_from_drive(lecture):
+    root_folder_id, root_existed = create_folder(st.secrets["my_sql"]["mysql_dbName"],permissions=True)
+    user_folder_id, user_folder_existed = create_folder(st.session_state["username"], parent_folder_id=root_folder_id)
+    lecture_folder_id, lecture_existed = create_folder(lecture, parent_folder_id=user_folder_id)
+    delete_from_folder(lecture_folder_id)
+    drive = setup_pydrive()
+    file1 = drive.CreateFile({'id': lecture_folder_id})
+    file1.Delete()

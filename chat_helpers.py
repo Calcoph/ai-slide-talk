@@ -35,7 +35,8 @@ def render_chat_layout():
                 #write in chat
                 st.chat_message("assistant").write(msg["content"])
             else:
-                response = st.session_state["chatbot"]({"question":prompt, "chat_history": st.session_state["history"][-2]})
+                response = st.session_state["chatbot"]({"question":prompt,
+                                                         "chat_history": st.session_state["history"][-1]})
                 msg = {"role": "AI Prof", "content":response["text"]}
                 st.session_state.messages.append(msg)
                 st.chat_message("AI Prof",avatar="👩‍🏫").write(response["text"])
