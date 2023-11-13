@@ -41,9 +41,15 @@ Install dependencies:
 ```
 sudo apt-get update
 sudo apt-get install pkg-config
+python3 -m venv ai-slide-talk-venv
+source ai-slide-talk-venv/bin/activate
 pip3 install -r requirements.txt
 ```
 Start application:
 ```
 streamlit run ai_slide_talk.py
+```
+Deactivate virtual environment:
+```
+deactivate
 ```
