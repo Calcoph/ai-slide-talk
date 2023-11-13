@@ -59,7 +59,7 @@ def get_default_messages():
 # This is a list instead of a dict because order of operations is important
 # Values are lambdas so they are lazily evaluated
 defaults = [
-    ("history", lambda: []),
+    # ("history", lambda: []),
     ("explainer", lambda: False),
     ("language", lambda: False),
     ("lecture_list", load_lecturenames),

@@ -133,6 +133,7 @@ def login_user(username: str, password: str):
         st.session_state["authentication_status"] = True
         st.session_state["username"] = username
         st.session_state["userhistory"] = load_history()
+        
         os.environ["OPENAI_API_KEY"] = decrypt_api_key(userinfo[4])
         st.rerun()
     else:

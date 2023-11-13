@@ -25,10 +25,6 @@ def load_chat_history(lecture: str, newest_k=5):
 def save_history(message_info: FullMessage):
     db = Database()
     db.add_history(message_info)
-    st.session_state["userhistory"] = pd.concat(
-        [st.session_state["userhistory"],
-         pd.DataFrame(
-              message_info.to_dict(),
-              index=[0]
-        )]
-    ).reset_index(drop=True)
+    st.session_state["userhistory"] = load_history()
+    
+

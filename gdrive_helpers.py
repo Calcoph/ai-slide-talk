@@ -32,13 +32,10 @@ def download_pdf(username: str, lecture: str) -> bool:
     id = db.query("SELECT pdf_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0][0]
     if not os.path.isdir(f"tmp/{lecture}"):
         os.makedirs(f"tmp/{lecture}")
-    elif os.path.isfile(f"tmp/{lecture}/{lecture}.pdf"):
+    if os.path.isfile(f"tmp/{lecture}/{lecture}.pdf"):
         return True
-    else:
-        pass
     file = drive.CreateFile({'id': id})
     file.GetContentFile(f"tmp/{lecture}/{lecture}.pdf")
-
     return False
 
 def download_faiss_data(username: str, lecture: str):
@@ -46,19 +43,16 @@ def download_faiss_data(username: str, lecture: str):
     db = Database()
     ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
     if not os.path.isdir(f"tmp/{lecture}"):
-        #os.makedirs(f"tmp/{lecture}")
         os.makedirs(f"tmp/{lecture}")
-    elif os.path.isfile("index.faiss"):
-        return True
+    if not os.path.isfile("tmp/{lecture}/index.faiss"):
+        for id, file_kind in zip(ids, ["faiss","pkl"]):
+            file = drive.CreateFile({'id': id})
+            # if file_kind == "pdf":
+            #     file.GetContentFile("tmp/pdf.pdf")
+            # else:
+            file.GetContentFile(f"tmp/{lecture}/index.{file_kind}")
     else:
-        pass
-    for id, file_kind in zip(ids, ["faiss","pkl"]):
-        file = drive.CreateFile({'id': id})
-        # if file_kind == "pdf":
-        #     file.GetContentFile("tmp/pdf.pdf")
-        # else:
-        file.GetContentFile(f"tmp/{lecture}/index.{file_kind}")
-    return True
+        return True
 
 def create_folder(foldername: str, parent_folder_id: str=None, permissions: bool= False) -> (str | list[str], bool):
     drive = setup_pydrive()
@@ -144,22 +138,23 @@ def delete_database():
                                 password=st.secrets["my_sql"]["mysql_password"])
     cnx.cursor().execute(f"DROP DATABASE {st.secrets['my_sql']['mysql_dbName']}")
 
-# def reset_database(tables: list[str]=None):
-#     cnx =  mysql.connector.connect(host="localhost",
-#                                 user=st.secrets["my_sql"]["mysql_user"],
-#                                 password=st.secrets["my_sql"]["mysql_password"],
-#                                 database=st.secrets["my_sql"]['mysql_dbName']
-#                                 )
-#     if tables == None:
-#         tables = [
-#         "users",
-#         "history",
-#         "filestorage"]
-#     with cnx.cursor() as cursor:
+def reset_database(tables: list[str]=None):
+    
+    cnx =  mysql.connector.connect(host="localhost",
+                                user=st.secrets["my_sql"]["mysql_user"],
+                                password=st.secrets["my_sql"]["mysql_password"],
+                                database=st.secrets["my_sql"]['mysql_dbName']
+                                )
+    if tables == None:
+        tables = [
+        "users",
+        "history",
+        "filestorage"]
+    with cnx.cursor() as cursor:
 
-#         for table in tables:
-#             cursor.execute(f"DELETE FROM {table}")
-#             cnx.commit()
+        for table in tables:
+            cursor.execute(f"DELETE FROM {table}")
+            cnx.commit()
 
 def delete_all():
     delete_database()
