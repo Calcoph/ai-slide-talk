@@ -1,7 +1,6 @@
 import mysql.connector
 from mysql.connector import MySQLConnection
 import streamlit as st
-import sys
 
 from typing import Any
 from dictclasses import FullMessage, StoredFileData, UserRegister

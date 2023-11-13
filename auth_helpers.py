@@ -97,6 +97,10 @@ def create_new_user(userinfo: UserRegister, check_key=True):
     if len(db.query("SELECT * FROM users WHERE email = %s",(userinfo.email,))) != 0:
         st.error("Email already taken. Reset your password in the 'Login' tab.")
         st.stop()
+    if not userinfo.username.isalnum():
+        st.error("Your username must only contain letters and numbers.")
+        st.stop()
+
     #add user to database
     db.add_user(userinfo)
     st.success("You registered succesfully. Login with your credentials.")
