@@ -44,7 +44,8 @@ def download_faiss_data(username: str, lecture: str):
     ids = db.query("SELECT index_faiss_id,index_pkl_id from filestorage WHERE username = %s AND lecture = %s",(username,lecture))[0]
     if not os.path.isdir(f"tmp/{lecture}"):
         os.makedirs(f"tmp/{lecture}")
-    if not os.path.isfile("tmp/{lecture}/index.faiss"):
+    st.write(lecture)
+    if not os.path.isfile(f"tmp/{lecture}/index.faiss"):
         for id, file_kind in zip(ids, ["faiss","pkl"]):
             file = drive.CreateFile({'id': id})
             # if file_kind == "pdf":

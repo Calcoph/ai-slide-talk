@@ -77,14 +77,14 @@ def initialize_session_state():
             if value is not None:
                 st.session_state[key] = value
 
-@st.cache_resource()
+#@st.cache_resource()
 def setup_qa(lecture: str, language: str):
 
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(f"tmp/{lecture}",embeddings=embeddings)
 
     template = """Use the following pieces of context to answer the users question. \n
-    If you don't know the answer, just say that you don't know, don't try to make up an answer.
+    If the answer is not in the fiven context just say that you don't know, don't try to make up an answer.
     \n----------------\n{context}"""
 
     language_text = f"Your answer should be in {language}."
@@ -105,8 +105,8 @@ def setup_qa(lecture: str, language: str):
                                         ,combine_docs_chain_kwargs={"prompt": qa_prompt}, return_source_documents=True)
 
         return qa
-
-@st.cache_resource()
+    
+#@st.cache_resource()
 def setup_explainer_bot(language: str):
     try:
         llm = ChatOpenAI()

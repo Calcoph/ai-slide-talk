@@ -26,7 +26,7 @@ def render_chat_layout():
         #write in chat
         st.chat_message("user").write(prompt)
         with st.spinner("Thinking 🤔"):
-            if st.session_state["explainer"] == False:       
+            if st.session_state["explainer"] == False:   
                 response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
                 slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
                 msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
