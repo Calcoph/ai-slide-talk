@@ -56,13 +56,6 @@ def render_login_register():
             with st.spinner("Registering User"):
                 create_new_user(userinfo, check_key=True)
 
-#@st.cache_data()
-def load_userdb() -> pd.DataFrame :
-    mydb = Database()
-    userdb = mydb.query("SELECT * FROM users")
-    return pd.DataFrame(userdb,
-                        columns=["id","email","username","password","OPENAI_API_KEY"])
-
 def check_api_key(key: str) -> bool:
     """Checks if the key is a valid openai key"""
 
