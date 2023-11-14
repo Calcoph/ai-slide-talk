@@ -72,8 +72,7 @@ def render_lecture_selector():
         if lecture_change:
             st.session_state["lecture"] = lecture
             st.session_state["language"] = language
-            load_chat_history(st.session_state["lecture"],
-                            newest_k=10)
+            load_chat_history(st.session_state["lecture"])
             with st.spinner("Downloading Data."):
                 download_faiss_data(st.session_state["username"],st.session_state["lecture"])
                 st.session_state["qa"] = streamlit_setup_qa()
