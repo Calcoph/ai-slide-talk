@@ -84,6 +84,11 @@ def create_new_user(userinfo: UserRegister, check_key=True):
         st.error("Your OPENAI API-KEY is faulty. Try again or use a different Key.")
         st.stop()
     # ensure username to be unique
+    try:
+        db.query("SELECT * FROM users WHERE username = %s",(userinfo.username,))
+    except:
+        db = Database()
+        db.query("SELECT * FROM users WHERE username = %s",(userinfo.username,))
     if len(db.query("SELECT * FROM users WHERE username = %s",(userinfo.username,))) != 0:
         st.error("Username already taken. Choose another one.")
         st.stop()

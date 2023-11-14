@@ -15,6 +15,8 @@ def displayPDF(file):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 if check_login():
+
+    st.title("PDF Viewer")
     load_lecturenames()
     with st.form(key="lecture_submit"):
         lecture = st.selectbox("Select the lecture you want to display.", options=st.session_state["lecture_list"])

@@ -24,7 +24,6 @@ print(databases)
         )
         self.__checkDatabaseExists(st.secrets["my_sql"]["mysql_dbName"])
         self.mydb.database = st.secrets["my_sql"]["mysql_dbName"] #st.secrets["mysql_dbName"]
-
     def query(self, sql_query,data=None):
         cursor = self.mydb.cursor()
         if data != None:
@@ -147,4 +146,4 @@ print(databases)
         mydb = Database()
         mydb.query(create_history_table_query)
         mydb.query(create_users_table_query)
-        mydb.query(create_filestorage_table_query)
+        mydb.query(create_filestorage_table_query)  
