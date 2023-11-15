@@ -18,7 +18,13 @@ def render_chat_layout():
         else:
             st.chat_message(msg["role"], avatar="👩‍🏫").write(msg["content"])
 
-    st.chat_message("assistant").write(f"You are chatting with the **{st.session_state['lecture']}** slides in **{st.session_state['language']}**. How can I help you?")
+    # if st.session_state["explainer"] == True:
+    #     explainer_text = "activated"
+    # else:
+    #     explainer_text = "deactivated"
+    st.chat_message("assistant").write(f"""You are chatting with the 
+                                       **{st.session_state['lecture']}** slides in **{st.session_state['language']}**.
+                                        How can I help you?""")
 
     if prompt := st.chat_input():
         #add user message to session_state messages
@@ -36,7 +42,8 @@ def render_chat_layout():
                 st.chat_message("assistant").write(msg["content"])
             else:
                 response = st.session_state["chatbot"]({"question":prompt,
-                                                         "chat_history": st.session_state["history"][-1]})
+                                                         "chat_history": []})
+                                                         #st.session_state["history"][-1]})
                 msg = {"role": "AI Prof", "content":response["text"]}
                 st.session_state.messages.append(msg)
                 st.chat_message("AI Prof",avatar="👩‍🏫").write(response["text"])
@@ -50,7 +57,7 @@ def render_chat_layout():
                     st.session_state["language"],
                 )
             save_history(message_info)
-    st.session_state["explainer"] = st.toggle("👩‍🏫 AI Prof")
+    st.session_state["explainer"] = st.toggle("👩‍🏫 AI Prof",help="If activated, the system gives open answers not depending on the lecture content.")
 
 def render_lecture_selector():
     """Lecture selector UI"""

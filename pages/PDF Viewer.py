@@ -15,14 +15,29 @@ def displayPDF(file):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 if check_login():
+
+    st.title("PDF Viewer")
     load_lecturenames()
     with st.form(key="lecture_submit"):
-        lecture = st.selectbox("Select the lecture you want to display.", options=st.session_state["lecture_list"])
-        lecture_submit = st.form_submit_button("Show PDF")
+          lecture = st.selectbox("Select the lecture you want to display.", options=st.session_state["lecture_list"])
+          lecture_submit = st.form_submit_button("Download from Server")
     if lecture_submit:
-        with st.spinner("Downloading"):
-            download_pdf(st.session_state["username"],lecture)
-        with st.spinner("Rendering"):
-            displayPDF(f"tmp/{lecture}/{lecture}.pdf")
+        download_pdf(st.session_state["username"],lecture)
+        with open(f"tmp/{lecture}/{lecture}.pdf", "rb") as fp:
+                    pdf_file = fp.read()
+        download = st.download_button("Start Download",pdf_file,f"{lecture}.pdf")
+
+
+
+    # with st.form(key="lecture_submit"):
+    #     lecture = st.selectbox("Select the lecture you want to display.", options=st.session_state["lecture_list"])
+    #     lecture_submit = st.form_submit_button("Show PDF")
+    # if lecture_submit:
+    #     with st.spinner("Downloading"):
+    #         download_pdf(st.session_state["username"],lecture)
+    #         #displayPDF(f"tmp/{lecture}/{lecture}.pdf")
+    #         with open(f"tmp/{lecture}/{lecture}.pdf", "rb") as fp:
+    #             pdf_file = fp.read()
+            
 
 

@@ -40,3 +40,13 @@ def delete_lecture(lecturename):
                                                                                      lecturename))
     load_lecturenames()
     st.rerun()
+
+def check_if_lecture_exists(lecturename):
+    db = Database()
+    uploaded_lectures = db.query("SELECT lecture from filestorage WHERE username = %s",
+                                                    (st.session_state["username"],))
+    uploaded_lectures = set([x[0] for x in uploaded_lectures])
+    if lecturename in uploaded_lectures:
+        return True
+    else:
+        return False

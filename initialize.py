@@ -83,7 +83,7 @@ def setup_qa(lecture: str, language: str):
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(f"tmp/{lecture}",embeddings=embeddings)
 
-    template = """Use the following pieces of context to answer the users question. \n
+    template = """The following pieces of context is from a lecture slides. Use it to answer the users question. \n
     If the answer is not in the fiven context just say that you don't know, don't try to make up an answer.
     \n----------------\n{context}"""
 
@@ -115,12 +115,21 @@ def setup_explainer_bot(language: str):
     prompt = ChatPromptTemplate(
         messages=[
             SystemMessagePromptTemplate.from_template(
-                "You are a helpful college professor that explains difficult subjects to 10 year olds. "+
+                "You are a helpful college professor that explains difficult subjects easily understandable. "+
+                "Come up with a precise answer to the question of the user"+
+                ""
                 f"Your answers should be in {language}" +
+
                 """This is the previous conversation with the user: \n
 
                 {chat_history}
-                """),
+                \n
+                
+                If the previous conversation does not help, come up with an answer without the convsersation.
+                """
+            
+                
+                ),
             HumanMessagePromptTemplate.from_template("{question}")
         ]
     )
