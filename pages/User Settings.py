@@ -1,6 +1,12 @@
 import streamlit as st
 from auth_helpers import *
 
+st.set_page_config(
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon="documentation\SlideChatter.ico"
+)
+
 if check_login():
     st.title("User Settings")
     changepw_tab, change_api_tab = st.tabs(["**Change Password**", "**Change OPENAI API KEY**"])

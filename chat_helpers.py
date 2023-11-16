@@ -1,7 +1,7 @@
 import streamlit as st
 from dictclasses import FullMessage
 from history_helpers import load_chat_history,save_history
-from initialize import streamlit_setup_qa
+from initialize import streamlit_setup_RAG
 from gdrive_helpers import download_faiss_data
 
 def render_chat_layout():
@@ -18,10 +18,6 @@ def render_chat_layout():
         else:
             st.chat_message(msg["role"], avatar="👩‍🏫").write(msg["content"])
 
-    # if st.session_state["explainer"] == True:
-    #     explainer_text = "activated"
-    # else:
-    #     explainer_text = "deactivated"
     st.chat_message("assistant").write(f"""You are chatting with the 
                                        **{st.session_state['lecture']}** slides in **{st.session_state['language']}**.
                                         How can I help you?""")
@@ -32,8 +28,15 @@ def render_chat_layout():
         #write in chat
         st.chat_message("user").write(prompt)
         with st.spinner("Thinking 🤔"):
-            if st.session_state["explainer"] == False:   
-                response = st.session_state["qa"]({"question": prompt, "chat_history":st.session_state["history"]})
+            if st.session_state["explainer"] == False:
+                
+                history_len = 5
+                if len(st.session_state["history"]) > history_len:
+                    history_for_RAG = st.session_state["history"][-history_len:]
+                else:
+                    history_for_RAG = st.session_state["history"]
+
+                response = st.session_state["RAG"]({"question": prompt, "chat_history":history_for_RAG})
                 slidenumbers = [str(x.metadata["page"]) for x in response["source_documents"]]
                 msg = {"role": "assistant", "content":f"""{response["answer"]} **The respective information can be found in slides {", ".join(slidenumbers)}**"""}
                 st.session_state.messages.append(msg)
@@ -75,4 +78,4 @@ def render_lecture_selector():
             load_chat_history(st.session_state["lecture"])
             with st.spinner("Downloading Data."):
                 download_faiss_data(st.session_state["username"],st.session_state["lecture"])
-                st.session_state["qa"] = streamlit_setup_qa()
+            st.session_state["RAG"] = streamlit_setup_RAG()

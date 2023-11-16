@@ -2,6 +2,12 @@ import streamlit as st
 from auth_helpers import check_login
 from chat_helpers import render_chat_layout, render_lecture_selector
 from initialize import initialize_session_state, check_secrets_file, render_secrets_creator, initialize_session_state_before_login
+st.set_page_config(
+    page_title="SlideChatter",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon="documentation\SlideChatter.ico"
+)
 
 initialize_session_state_before_login()
 

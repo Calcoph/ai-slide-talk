@@ -4,6 +4,11 @@ from initialize import load_lecturenames
 from gdrive_helpers import upload_lecture_to_drive
 from upload_helpers import *
 
+st.set_page_config(
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon="documentation\SlideChatter.ico"
+)
 
 
 if check_login():

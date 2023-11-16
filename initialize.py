@@ -1,19 +1,15 @@
 from langchain.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.prompts.chat import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
-    MessagesPlaceholder,
     HumanMessagePromptTemplate,
 )
 import streamlit as st
 from cryptography.fernet import Fernet
 from langchain.chains import LLMChain
-from langchain.memory import ConversationBufferMemory
 import os
 from database import *
 import toml,json
@@ -36,8 +32,8 @@ def load_lecturenames():
 def streamlit_setup_explainer_bot():
     return setup_explainer_bot(st.session_state["language"])
 
-def streamlit_setup_qa():
-    return setup_qa(st.session_state["lecture"], st.session_state["language"])
+def streamlit_setup_RAG():
+    return setup_RAG(st.session_state["lecture"], st.session_state["language"])
 
 def get_default_messages():
     try:
@@ -78,7 +74,7 @@ def initialize_session_state():
                 st.session_state[key] = value
 
 #@st.cache_resource()
-def setup_qa(lecture: str, language: str):
+def setup_RAG(lecture: str, language: str):
 
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(f"tmp/{lecture}",embeddings=embeddings)
@@ -94,17 +90,17 @@ def setup_qa(lecture: str, language: str):
     SystemMessagePromptTemplate.from_template(template),
     HumanMessagePromptTemplate.from_template("{question}")
     ]
-    qa_prompt = ChatPromptTemplate.from_messages(messages)
+    RAG_prompt = ChatPromptTemplate.from_messages(messages)
 
 
 
     if vectorstore is None:
         return None
     else:
-        qa = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0), vectorstore.as_retriever()
-                                        ,combine_docs_chain_kwargs={"prompt": qa_prompt}, return_source_documents=True)
+        RAG = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0), vectorstore.as_retriever()
+                                        ,combine_docs_chain_kwargs={"prompt": RAG_prompt}, return_source_documents=True)
 
-        return qa
+        return RAG
     
 #@st.cache_resource()
 def setup_explainer_bot(language: str):
